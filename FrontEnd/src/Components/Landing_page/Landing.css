@@ -1,0 +1,168 @@
+.Landing-page{
+    height: 100vh;
+    background-image: url("bg-img/iphone.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: rgba(34, 31, 48, 0.555);
+    background-blend-mode: multiply;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    position: relative;
+    overflow-y: hidden;
+}
+.allcontainer-cards{
+    padding: 10px;
+    width: 100%;
+    height: 95%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1.9cm;
+}
+.icon-container{
+    height: 60%;
+    width: 100%;
+    padding: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.8cm;
+}
+.icon-container button{
+    background-color: transparent;
+    border: none;
+}
+.icon-div{
+    border-radius: 20px;
+}
+
+.icon-div img{
+    height: 1.5cm;
+    width: 1.5cm;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(31, 32, 44, 0.918);
+    transition: 0.60s;
+}
+.icon-div img:hover{
+    cursor: pointer;
+    transform: scale(1.2);
+    transition: 0.60s;
+}
+.iphone-icon-container{
+    width: auto;
+    height: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 0.3cm;
+}
+.iphone-icon-container h5{
+    text-decoration: none;
+    font-style: none;
+    color: white;
+}
+.search-icon{
+    width: 40%;
+    height: 0.8cm;
+    background-color: transparent;
+    backdrop-filter: blur(15px);
+    border-radius: 30px;
+    box-shadow: 0px 0px 10px rgba(34, 34, 48, 0.822);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.main-home-icons{
+    height: 2.5cm;
+    width: auto;
+    padding: 15px;
+    /*background-color: rgba(241, 238, 238, 0.123);*/
+    background-color: transparent;
+    backdrop-filter: blur(10px);
+    border-radius: 30px;
+    box-shadow: 0px 0px 7px rgba(35, 35, 53, 0.774);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    gap: 0.3cm;
+}
+.logo-container{
+    display: none;
+}
+.main-home-icons button{
+    background-color: transparent;
+    border: none;
+}
+@media(max-width:412px){
+    .icon-div img{
+        height: 1.9cm;
+        width: 1.9cm;
+    }
+    .iphone-icon-container{
+        gap: 0.5cm;
+    }
+}
+@media(min-width:768px){
+    .allcontainer-cards{
+        width: 80%;
+    }
+    .icon-container{
+        gap: 2cm;
+    }
+    .main-home-icons{
+        gap: 1cm;
+    }
+}
+@media(min-width: 1200px){
+    .logo-container{
+        display: block;
+    }
+    .search-icon{
+        display: none;
+    }
+    .allcontainer-cards{
+        justify-content: space-between;
+    }
+    .Landing-page{
+        background-color: rgba(72, 42, 73, 0.651);
+        background-image: url("src/assets/mac_os_wallpaper.jpg");
+    }
+    .main-home-icons span{
+        display: none;
+    }
+    .icon-container span{
+        display: none;
+    }
+    .pop--up-container{
+        
+        display: block;
+    }
+    .trash-icon {
+        transform: scale(1.2);
+        border-left: 2px solid rgba(228, 224, 224, 0.822);
+        padding: 4px;
+    }
+    
+}
+@media(min-width: 1200px){
+    .allcontainer-cards{
+        width: 50%;
+    }
+}
+@media(min-width: 1700px){
+    .allcontainer-cards{
+        width: 40%;
+    }
+}
+.trash-icon img{
+    box-shadow: none;
+}

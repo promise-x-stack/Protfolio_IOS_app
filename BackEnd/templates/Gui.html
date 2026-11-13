@@ -1,0 +1,117 @@
+{% extends 'Base.html' %}
+
+{% block link %}
+    <link rel="stylesheet" href="static/Gui.css">
+{% endblock %}
+{% block body %}
+
+    <div class="body--container">
+
+        <nav>
+            <div class="nav--container">
+                <div class="api-logo">
+                    <h1>Mac Os Potfolio API</h1>
+                </div>
+                <div class="nav-link">
+                    <a href="#view" onmouseenter="enterVtext()" onmouseleave="exitVtext()" class="view link-container">
+                        <i class="fas fa-th-large"></i>
+                        <h3 class="view-text">View</h3>
+                    </a>
+                    <a onmouseenter="enterUPtext()" onmouseleave="exitUPtext()" class="upload link-container">
+                        <i class="fas fa-upload folder-icon"></i>
+                        <h3 class="upload-text">Upload</h3>
+                    </a>
+                    <a onmouseenter="enterUDtext()" onmouseleave="exitUDtext()" class="update link-container">
+                        <i class="fa-solid fa-pen-nib"></i>
+                        <h3 class="update-text">Update</h3>
+                    </a>
+                    <a onmouseenter="enterDtext()" onmouseleave="exitDtext()" class="delite link-container">
+                        <i class="fas fa-trash-alt"></i>
+                        <h3 class="delite-text">Delete</h3>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!--main body-->
+        <main>
+
+            <div class="landing--page">
+
+                <div class="landing--container">
+
+                    <div class="number-users">
+                        <h1 class="t">Number of users</h1>
+                        <div class="users-container">
+                            <div class="realtime-users user">
+                                <h3>Real time users</h3>
+                                <h1>21</h1>
+                                <p>Total number of users online in real time</p>
+                            </div>
+                            <div class="general--users user">
+                                <h3>Total users</h3>
+                                <h1>45</h1>
+                                <p>Total number of users who visited the portfolio</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="messages-sent">
+                        <div class="users">
+                            <h3>Masages Sent</h3>
+                            <h1>{{num}}</h1>
+                            <p>The total number of messages sentby the users who visited the portfolio</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="Treats">
+                    <div class="server--details">
+                        <div class="storage">
+                            <h3>Storage</h3>
+                            <h1>32Gb</h1>
+                            <p>server storage</p>
+                        </div>
+                        <span class="line"></span>
+                        <div class="power">
+                            <h2>Power</h2>
+                            <h1>20%</h1>
+                            <p>Servers power enargy usage</p>
+                        </div>
+                    </div>
+                    <div class="database-conection">
+                        <h1>Data Base Connected Sucessfuly</h1>
+                        <p>Mongo Db in secion</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!--messages-->
+            <section class="msg--section" id="view">
+                {% if num >= 1 %}
+                    <div class="massage-container">
+                        <h1 style="color: rgb(44, 35, 95);">Messages</h1>
+                        <div class="msg-container">
+                            {% for i in data %}
+
+                                <div class="messages">
+                                    <h3>{{i.massege}}</h3>
+                                    <p>date: {{i.dateSent}}</p>
+                                </div>
+                                
+                            {% endfor %}
+                        </div>
+                        <button onclick="alert('messages clesred')" class="clear--msg-btn">Clear messages</button>
+                    </div>
+                {% endif %}
+            </section>
+            
+        </main>
+
+    </div>
+
+    <script src="static/index.js"></script>
+
+{% endblock %}
