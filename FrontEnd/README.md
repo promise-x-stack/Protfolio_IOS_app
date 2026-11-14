@@ -1,5 +1,14 @@
 # React + Vite
 
+## Portfolio API
+
+The portfolio loads projects from the Flask API at `http://127.0.0.1:5000` by
+default. Set `VITE_API_BASE_URL` in a local `.env` file when the API is hosted
+elsewhere, for example `VITE_API_BASE_URL=http://localhost:5000`. Project lists
+are cached in browser storage for 60 seconds and can be shown offline when a
+previous response is available. See [the backend setup guide](../BackEnd/README.md)
+for XAMPP/MySQL configuration and the project CRUD API.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
