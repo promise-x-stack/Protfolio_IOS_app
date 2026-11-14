@@ -1,0 +1,84 @@
+*{
+    padding: 0px;
+    margin: 0px;
+    border: none;
+    border-radius: 0px;
+    overflow: hidden;
+}
+.container{
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(130deg, rgba(252, 184, 242, 0.767), rgb(250, 214, 115), rgb(212, 0, 255) );
+}
+.container div{
+    padding: 5px;
+    height: 85%;
+    width: 90%;
+    background-color: rgba(179, 176, 176, 0.171);
+    border-radius: 20px;
+    box-shadow: 5px 15px 10px rgba(88, 85, 85, 0.555);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1cm;
+}
+.container div h1{
+    text-align: center;
+    width: 100%;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 2rem;
+    overflow: hidden;
+}
+.container div h3{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.container div span{
+    background: linear-gradient(130deg, rgb(4, 216, 85), rgb(208, 245, 43), rgb(4, 216, 85));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    text-shadow: 0px 0px 0px rgba(26, 24, 24, 0.26);
+}
+.container div p{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+@media(min-width: 800px){
+    .container div h1{
+        font-size: 2.5rem;
+    }
+}
+@media(min-width: 1200px){
+    .container div h1{
+        font-size: 3.5rem;
+    }
+}
+.container div button{
+    height: 1.5cm;
+    width: 4.5cm;
+    font-size: 1.5rem;
+    border-radius: 5px;
+    border: 1px solid rgb(253, 237, 237);
+    background-color: transparent;
+    color: rgb(243, 233, 233);
+    font-weight: 300;
+    transition: all 0.50s ease-in-out;
+}
+.container div button:hover{
+    cursor: pointer;
+    transform: translateY(-10px);
+    color: black;
+    border-color: black;
+    box-shadow: 5px 15px 5px rgba(107, 102, 102, 0.555);
+    transition: all 0.50s ease-in-out;
+}
+.container div a {
+    text-decoration: none;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

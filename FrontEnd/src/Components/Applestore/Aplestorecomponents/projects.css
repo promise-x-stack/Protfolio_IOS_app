@@ -1,0 +1,120 @@
+.All-p-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.lable {
+  color: rgb(32, 32, 53);
+  padding: 10px;
+}
+
+.product--container-c {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  align-items: stretch;
+  gap: 14px;
+}
+
+.app-card {
+  min-width: 0;
+  min-height: 104px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  padding: 14px;
+  gap: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.app-icon {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #007aff, #5856d6);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.7rem;
+}
+
+.app-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-name {
+  margin: 0;
+  color: #202035;
+  font-weight: 700;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.app-category {
+  margin: 3px 0 0;
+  color: #8e8e93;
+  font-size: 0.75rem;
+}
+
+.rating {
+  margin: 3px 0 0;
+  color: #ff9f0a;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.download-btn {
+  flex: 0 0 auto;
+  background: #e5e5ea;
+  color: #202035;
+  text-decoration: none;
+  padding: 7px 14px;
+  border-radius: 18px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.download-btn:hover,
+.download-btn:focus-visible {
+  background: #d2d2d7;
+}
+
+.project-message {
+  grid-column: 1 / -1;
+  padding: 18px;
+  color: #454552;
+  text-align: center;
+}
+
+.project-error {
+  color: #a12622;
+}
+
+@media (max-width: 420px) {
+  .product--container-c {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-card {
+    padding: 11px;
+    gap: 10px;
+  }
+
+  .app-icon {
+    width: 46px;
+    height: 46px;
+    flex-basis: 46px;
+  }
+
+  .download-btn {
+    padding: 7px 10px;
+  }
+}
