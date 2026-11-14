@@ -31,6 +31,13 @@ the public frontend bundle. Write operations return `503` until a token is
 configured. Do not expose this development API publicly without HTTPS and a
 properly managed admin credential.
 
+## Backend modules
+
+`Api.py` imports `Modules.database`, which owns MySQL configuration,
+initialization, and all project, message, and email queries. The module creates
+the configured database and tables lazily when the first database operation is
+requested; the data itself remains in the XAMPP-managed MySQL server.
+
 ## Project API
 
 Projects use these JSON properties: `projectName`, `category`, `link`, `logo`,

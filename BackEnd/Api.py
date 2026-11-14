@@ -1,33 +1,17 @@
 import hmac
 import os
-import re
-import threading
 from datetime import datetime, timezone
 
-import mysql.connector
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
+
+from Modules import database
 
 app = Flask(__name__)
 CORS(app)
 
-MYSQL_HOST = os.getenv("MYSQL_HOST", "127.0.0.1")
-MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
-MYSQL_USER = os.getenv("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "portfolio_db")
-PROJECTS_ADMIN_TOKEN = os.getenv("PROJECTS_ADMIN_TOKEN", "f2520635350dc35cd20c623450f4a5ab6ee21ee77b75b2dfd4fd6fb7ddb170ca")
-
-_database_initialized = False
-_database_initialization_lock = threading.Lock()
-
-PROJECT_COLUMNS = {
-    "projectName": "project_name",
-    "category": "category",
-    "link": "link",
-    "logo": "logo",
-    "ratings": "ratings",
-}
+PROJECTS_ADMIN_TOKEN = os.getenv("PROJECTS_ADMIN_TOKEN", "")
+PROJECT_COLUMNS = database.PROJECT_COLUMNS
 REQUIRED_PROJECT_FIELDS = ("projectName", "category", "link")
 CATEGORY_NAMES = {
     "entertainment": "entertainment",
@@ -35,110 +19,6 @@ CATEGORY_NAMES = {
     "portfolio": "portfolio",
     "productivity": "productivity",
 }
-
-
-def _mysql_connection(include_database=True):
-    settings = {
-        "host": MYSQL_HOST,
-        "port": MYSQL_PORT,
-        "user": MYSQL_USER,
-        "password": MYSQL_PASSWORD,
-        "charset": "utf8mb4",
-    }
-    if include_database:
-        settings["database"] = MYSQL_DATABASE
-    return mysql.connector.connect(**settings)
-
-
-def _initialize_database():
-    global _database_initialized
-
-    if _database_initialized:
-        return
-
-    with _database_initialization_lock:
-        if _database_initialized:
-            return
-        if not re.fullmatch(r"[A-Za-z0-9_]+", MYSQL_DATABASE):
-            raise RuntimeError("MYSQL_DATABASE must contain only letters, numbers, and underscores")
-
-        connection = _mysql_connection(include_database=False)
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                f"CREATE DATABASE IF NOT EXISTS `{MYSQL_DATABASE}` "
-                "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-            )
-            cursor.close()
-        finally:
-            connection.close()
-
-        connection = _mysql_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS projects (
-                    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                    project_name VARCHAR(255) NOT NULL,
-                    category VARCHAR(100) NOT NULL,
-                    link TEXT NOT NULL,
-                    logo TEXT NOT NULL,
-                    ratings VARCHAR(100) NOT NULL DEFAULT '',
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-                    INDEX idx_projects_category (category)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-                """
-            )
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS messages (
-                    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                    message_text TEXT NOT NULL,
-                    date_sent VARCHAR(100) NOT NULL,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    INDEX idx_messages_created_at (created_at)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-                """
-            )
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS emails (
-                    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                    sender VARCHAR(320) NOT NULL,
-                    subject_line VARCHAR(255) NOT NULL,
-                    message_text TEXT NOT NULL,
-                    date_sent VARCHAR(100) NOT NULL,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    INDEX idx_emails_created_at (created_at)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-                """
-            )
-            connection.commit()
-            cursor.close()
-        finally:
-            connection.close()
-        _database_initialized = True
-
-
-def get_database_connection():
-    _initialize_database()
-    return _mysql_connection()
-
-
-def _project_from_row(row):
-    if row is None:
-        return None
-    return {
-        "id": row["id"],
-        "projectName": row["project_name"],
-        "category": row["category"],
-        "link": row["link"],
-        "logo": row["logo"],
-        "ratings": row["ratings"],
-    }
 
 
 def _read_project_payload(payload, partial=False):
@@ -210,23 +90,10 @@ def Home():
 def products():
     if request.method == "GET":
         try:
-            connection = get_database_connection()
-            try:
-                cursor = connection.cursor(dictionary=True)
-                cursor.execute(
-                    """
-                    SELECT id, project_name, category, link, logo, ratings
-                    FROM projects ORDER BY id DESC
-                    """
-                )
-                result = [_project_from_row(row) for row in cursor.fetchall()]
-                cursor.close()
-            finally:
-                connection.close()
-            response = jsonify(result)
+            response = jsonify(database.list_projects())
             response.headers["Cache-Control"] = "public, max-age=60"
             return response, 200
-        except mysql.connector.Error as error:
+        except database.DatabaseError as error:
             return _database_error(error)
 
     authorized, response = _admin_authorized()
@@ -237,23 +104,8 @@ def products():
         return jsonify({"error": error}), 400
 
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                """
-                INSERT INTO projects (project_name, category, link, logo, ratings)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                tuple(payload[field] for field in PROJECT_COLUMNS),
-            )
-            project_id = cursor.lastrowid
-            connection.commit()
-            cursor.close()
-        finally:
-            connection.close()
-        return jsonify({"id": project_id, **payload}), 201
-    except mysql.connector.Error as error:
+        return jsonify(database.create_project(payload)), 201
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
@@ -261,26 +113,13 @@ def products():
 def project(project_id):
     if request.method == "GET":
         try:
-            connection = get_database_connection()
-            try:
-                cursor = connection.cursor(dictionary=True)
-                cursor.execute(
-                    """
-                    SELECT id, project_name, category, link, logo, ratings
-                    FROM projects WHERE id = %s
-                    """,
-                    (project_id,),
-                )
-                result = _project_from_row(cursor.fetchone())
-                cursor.close()
-            finally:
-                connection.close()
+            result = database.get_project(project_id)
             if result is None:
                 return jsonify({"error": "Project not found"}), 404
             response = jsonify(result)
             response.headers["Cache-Control"] = "public, max-age=60"
             return response, 200
-        except mysql.connector.Error as error:
+        except database.DatabaseError as error:
             return _database_error(error)
 
     authorized, response = _admin_authorized()
@@ -289,19 +128,11 @@ def project(project_id):
 
     if request.method == "DELETE":
         try:
-            connection = get_database_connection()
-            try:
-                cursor = connection.cursor()
-                cursor.execute("DELETE FROM projects WHERE id = %s", (project_id,))
-                deleted = cursor.rowcount
-                connection.commit()
-                cursor.close()
-            finally:
-                connection.close()
+            deleted = database.delete_project(project_id)
             if not deleted:
                 return jsonify({"error": "Project not found"}), 404
             return "", 204
-        except mysql.connector.Error as error:
+        except database.DatabaseError as error:
             return _database_error(error)
 
     payload, error = _read_project_payload(
@@ -311,74 +142,22 @@ def project(project_id):
         return jsonify({"error": error}), 400
 
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(
-                """
-                SELECT id, project_name, category, link, logo, ratings
-                FROM projects WHERE id = %s
-                """,
-                (project_id,),
-            )
-            current_project = cursor.fetchone()
-            if current_project is None:
-                cursor.close()
-                return jsonify({"error": "Project not found"}), 404
-
-            if request.method == "PUT":
-                merged_payload = payload
-            else:
-                merged_payload = {
-                    field: current_project[column]
-                    for field, column in PROJECT_COLUMNS.items()
-                }
-                merged_payload.update(payload)
-
-            cursor.execute(
-                """
-                UPDATE projects
-                SET project_name = %s, category = %s, link = %s, logo = %s, ratings = %s
-                WHERE id = %s
-                """,
-                (
-                    merged_payload["projectName"],
-                    merged_payload["category"],
-                    merged_payload["link"],
-                    merged_payload["logo"],
-                    merged_payload["ratings"],
-                    project_id,
-                ),
-            )
-            connection.commit()
-            cursor.close()
-        finally:
-            connection.close()
-        return jsonify({"id": project_id, **merged_payload}), 200
-    except mysql.connector.Error as error:
+        updated = database.update_project(
+            project_id, payload, partial=request.method == "PATCH"
+        )
+        if updated is None:
+            return jsonify({"error": "Project not found"}), 404
+        return jsonify(updated), 200
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
 def _category_products(category):
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(
-                """
-                SELECT id, project_name, category, link, logo, ratings
-                FROM projects WHERE LOWER(category) = %s ORDER BY id DESC
-                """,
-                (category,),
-            )
-            result = [_project_from_row(row) for row in cursor.fetchall()]
-            cursor.close()
-        finally:
-            connection.close()
-        response = jsonify(result)
+        response = jsonify(database.list_projects(category))
         response.headers["Cache-Control"] = "public, max-age=60"
         return response, 200
-    except mysql.connector.Error as error:
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
@@ -423,20 +202,9 @@ def Message():
         return jsonify({"error": "Message must be 10000 characters or fewer"}), 400
 
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                "INSERT INTO messages (message_text, date_sent) VALUES (%s, %s)",
-                (body, date_sent),
-            )
-            message_id = cursor.lastrowid
-            connection.commit()
-            cursor.close()
-        finally:
-            connection.close()
+        message_id = database.create_message(body, date_sent)
         return jsonify({"id": message_id, "response": "Message received"}), 201
-    except mysql.connector.Error as error:
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
@@ -467,28 +235,14 @@ def Mails():
             return jsonify({"error": f"{field} must be {limit} characters or fewer"}), 400
 
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                """
-                INSERT INTO emails (sender, subject_line, message_text, date_sent)
-                VALUES (%s, %s, %s, %s)
-                """,
-                (
-                    sender.strip(),
-                    subject.strip(),
-                    body.strip(),
-                    date_sent.strip(),
-                ),
-            )
-            email_id = cursor.lastrowid
-            connection.commit()
-            cursor.close()
-        finally:
-            connection.close()
+        email_id = database.create_email(
+            sender.strip(),
+            subject.strip(),
+            body.strip(),
+            date_sent.strip(),
+        )
         return jsonify({"id": email_id, "response": "Email received"}), 201
-    except mysql.connector.Error as error:
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
@@ -498,29 +252,8 @@ def list_messages():
     if not authorized:
         return response
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(
-                """
-                SELECT id, message_text, date_sent, created_at
-                FROM messages ORDER BY id DESC
-                """
-            )
-            result = [
-                {
-                    "id": row["id"],
-                    "message": row["message_text"],
-                    "dateSent": row["date_sent"],
-                    "createdAt": row["created_at"],
-                }
-                for row in cursor.fetchall()
-            ]
-            cursor.close()
-        finally:
-            connection.close()
-        return jsonify(result), 200
-    except mysql.connector.Error as error:
+        return jsonify(database.list_messages()), 200
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
@@ -530,19 +263,11 @@ def delete_message(message_id):
     if not authorized:
         return response
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute("DELETE FROM messages WHERE id = %s", (message_id,))
-            deleted = cursor.rowcount
-            connection.commit()
-            cursor.close()
-        finally:
-            connection.close()
+        deleted = database.delete_message(message_id)
         if not deleted:
             return jsonify({"error": "Message not found"}), 404
         return "", 204
-    except mysql.connector.Error as error:
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
@@ -552,31 +277,8 @@ def list_emails():
     if not authorized:
         return response
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(
-                """
-                SELECT id, sender, subject_line, message_text, date_sent, created_at
-                FROM emails ORDER BY id DESC
-                """
-            )
-            result = [
-                {
-                    "id": row["id"],
-                    "sender": row["sender"],
-                    "subject": row["subject_line"],
-                    "message": row["message_text"],
-                    "dateSent": row["date_sent"],
-                    "createdAt": row["created_at"],
-                }
-                for row in cursor.fetchall()
-            ]
-            cursor.close()
-        finally:
-            connection.close()
-        return jsonify(result), 200
-    except mysql.connector.Error as error:
+        return jsonify(database.list_emails()), 200
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
@@ -586,19 +288,11 @@ def delete_email(email_id):
     if not authorized:
         return response
     try:
-        connection = get_database_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute("DELETE FROM emails WHERE id = %s", (email_id,))
-            deleted = cursor.rowcount
-            connection.commit()
-            cursor.close()
-        finally:
-            connection.close()
+        deleted = database.delete_email(email_id)
         if not deleted:
             return jsonify({"error": "Email not found"}), 404
         return "", 204
-    except mysql.connector.Error as error:
+    except database.DatabaseError as error:
         return _database_error(error)
 
 
@@ -608,4 +302,4 @@ def Gui():
 
 
 if __name__ == "__main__":
-    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
+    app.run(debug=os.getenv("FLASK_DEBUG", "true").lower() == "true")

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import Api
 
@@ -8,9 +8,6 @@ class ProjectApiTests(unittest.TestCase):
     def setUp(self):
         Api.app.config["TESTING"] = True
         self.client = Api.app.test_client()
-        self.connection = MagicMock()
-        self.cursor = MagicMock()
-        self.connection.cursor.return_value = self.cursor
 
     def test_project_writes_require_admin_token(self):
         payload = {
@@ -27,19 +24,18 @@ class ProjectApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_create_and_list_projects(self):
-        self.cursor.lastrowid = 7
-        row = {
+        project = {
             "id": 7,
-            "project_name": "Portfolio",
+            "projectName": "Portfolio",
             "category": "portfolio",
             "link": "https://example.com",
             "logo": "",
             "ratings": "",
         }
-        self.cursor.fetchall.return_value = [row]
         with (
             patch.object(Api, "PROJECTS_ADMIN_TOKEN", "test-token"),
-            patch.object(Api, "get_database_connection", return_value=self.connection),
+            patch.object(Api.database, "create_project", return_value=project),
+            patch.object(Api.database, "list_projects", return_value=[project]),
         ):
             created = self.client.post(
                 "/api/products",
@@ -59,19 +55,25 @@ class ProjectApiTests(unittest.TestCase):
         self.assertEqual(listed.headers["Cache-Control"], "public, max-age=60")
 
     def test_update_and_delete_project(self):
-        row = {
+        updated_project = {
             "id": 7,
-            "project_name": "Portfolio",
+            "projectName": "Replaced portfolio",
             "category": "portfolio",
             "link": "https://example.com",
             "logo": "",
             "ratings": "",
         }
-        self.cursor.fetchone.side_effect = [row, row]
-        self.cursor.rowcount = 1
         with (
             patch.object(Api, "PROJECTS_ADMIN_TOKEN", "test-token"),
-            patch.object(Api, "get_database_connection", return_value=self.connection),
+            patch.object(
+                Api.database,
+                "update_project",
+                side_effect=[
+                    updated_project,
+                    {**updated_project, "projectName": "Updated portfolio"},
+                ],
+            ),
+            patch.object(Api.database, "delete_project", return_value=True),
         ):
             updated = self.client.put(
                 "/api/products/7",
@@ -110,9 +112,9 @@ class ProjectApiTests(unittest.TestCase):
 
     def test_database_errors_return_service_unavailable(self):
         with patch.object(
-            Api,
-            "get_database_connection",
-            side_effect=Api.mysql.connector.Error("database is offline"),
+            Api.database,
+            "list_projects",
+            side_effect=Api.database.DatabaseError("database is offline"),
         ):
             response = self.client.get("/api/products")
         self.assertEqual(response.status_code, 503)
@@ -127,9 +129,9 @@ class ProjectApiTests(unittest.TestCase):
         self.assertIn(b"projectId", response.data)
 
     def test_user_message_and_email_are_stored(self):
-        self.cursor.lastrowid = 12
-        with patch.object(
-            Api, "get_database_connection", return_value=self.connection
+        with (
+            patch.object(Api.database, "create_message", return_value=12) as message,
+            patch.object(Api.database, "create_email", return_value=13) as email,
         ):
             message_response = self.client.post(
                 "/message-user-data",
@@ -154,19 +156,12 @@ class ProjectApiTests(unittest.TestCase):
 
         self.assertEqual(message_response.status_code, 201)
         self.assertEqual(email_response.status_code, 201)
-        self.assertEqual(self.cursor.execute.call_count, 2)
-        self.assertEqual(
-            self.cursor.execute.call_args_list[0].args[1],
-            ("Hello from the portfolio", "11/15/2026"),
-        )
-        self.assertEqual(
-            self.cursor.execute.call_args_list[1].args[1],
-            (
-                "visitor@example.com",
-                "Project inquiry",
-                "Please contact me.",
-                "11/15/2026",
-            ),
+        message.assert_called_once_with("Hello from the portfolio", "11/15/2026")
+        email.assert_called_once_with(
+            "visitor@example.com",
+            "Project inquiry",
+            "Please contact me.",
+            "11/15/2026",
         )
 
     def test_messages_and_emails_are_private_and_deletable(self):
@@ -184,13 +179,36 @@ class ProjectApiTests(unittest.TestCase):
             "date_sent": "11/15/2026",
             "created_at": "2026-11-15T00:00:00",
         }
-        self.cursor.fetchall.side_effect = [[message_row], [email_row]]
-        self.cursor.rowcount = 1
         with (
             patch.object(Api, "PROJECTS_ADMIN_TOKEN", "test-token"),
             patch.object(
-                Api, "get_database_connection", return_value=self.connection
+                Api.database,
+                "list_messages",
+                return_value=[
+                    {
+                        "id": message_row["id"],
+                        "message": message_row["message_text"],
+                        "dateSent": message_row["date_sent"],
+                        "createdAt": message_row["created_at"],
+                    }
+                ],
             ),
+            patch.object(
+                Api.database,
+                "list_emails",
+                return_value=[
+                    {
+                        "id": email_row["id"],
+                        "sender": email_row["sender"],
+                        "subject": email_row["subject_line"],
+                        "message": email_row["message_text"],
+                        "dateSent": email_row["date_sent"],
+                        "createdAt": email_row["created_at"],
+                    }
+                ],
+            ),
+            patch.object(Api.database, "delete_message", return_value=True),
+            patch.object(Api.database, "delete_email", return_value=True),
         ):
             unauthorized = self.client.get("/api/messages")
             messages = self.client.get(
