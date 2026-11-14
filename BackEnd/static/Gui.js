@@ -5,6 +5,8 @@ const statusMessage = document.querySelector("#status-message");
 const formHeading = document.querySelector("#form-heading");
 const saveButton = document.querySelector("#save-project");
 const cancelButton = document.querySelector("#cancel-edit");
+const messageList = document.querySelector("#message-list");
+const emailList = document.querySelector("#email-list");
 
 function showStatus(message, isError = false) {
   statusMessage.textContent = message;
@@ -70,6 +72,102 @@ function createProjectCard(project) {
   actions.append(editButton, deleteButton);
   card.append(details, actions);
   return card;
+}
+
+function createCommunicationCard(entry, type) {
+  const card = document.createElement("article");
+  card.className = "communication-card";
+
+  const heading = document.createElement("h4");
+  heading.textContent = type === "email" ? entry.subject : "Portfolio message";
+  const details = document.createElement("p");
+  details.className = "communication-meta";
+  details.textContent = type === "email"
+    ? `From: ${entry.sender} · ${entry.dateSent || entry.createdAt}`
+    : entry.dateSent || entry.createdAt;
+  const body = document.createElement("p");
+  body.className = "communication-body";
+  body.textContent = entry.message;
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "danger-button";
+  deleteButton.textContent = "Delete";
+  deleteButton.addEventListener("click", () => deleteCommunication(entry, type));
+
+  card.append(heading, details, body, deleteButton);
+  return card;
+}
+
+function renderCommunications(container, entries, type) {
+  container.replaceChildren();
+  if (entries.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-list";
+    empty.textContent = `No ${type === "email" ? "emails" : "messages"} received.`;
+    container.append(empty);
+    return;
+  }
+  entries.forEach((entry) => container.append(createCommunicationCard(entry, type)));
+}
+
+async function loadCommunications(announce = true) {
+  const token = adminToken.value.trim();
+  if (!token) {
+    showStatus("Enter the admin token before loading messages and emails.", true);
+    adminToken.focus();
+    return;
+  }
+
+  const loadingMessages = document.createElement("p");
+  loadingMessages.className = "empty-list";
+  loadingMessages.textContent = "Loading messages…";
+  messageList.replaceChildren(loadingMessages);
+  const loadingEmails = document.createElement("p");
+  loadingEmails.className = "empty-list";
+  loadingEmails.textContent = "Loading emails…";
+  emailList.replaceChildren(loadingEmails);
+
+  const options = {
+    cache: "no-store",
+    headers: { Authorization: `Bearer ${token}` },
+  };
+  try {
+    const [messages, emails] = await Promise.all([
+      requestJson("/api/messages", options),
+      requestJson("/api/emails", options),
+    ]);
+    if (!Array.isArray(messages) || !Array.isArray(emails)) {
+      throw new Error("The inbox API returned an invalid response.");
+    }
+    renderCommunications(messageList, messages, "message");
+    renderCommunications(emailList, emails, "email");
+    if (announce) showStatus("Inbox loaded.");
+  } catch (error) {
+    showStatus(error.message || "Could not load messages and emails.", true);
+  }
+}
+
+async function deleteCommunication(entry, type) {
+  const token = adminToken.value.trim();
+  if (!token) {
+    showStatus("Enter the admin token before deleting inbox items.", true);
+    adminToken.focus();
+    return;
+  }
+  const label = type === "email" ? "email" : "message";
+  if (!window.confirm(`Delete this ${label}? This cannot be undone.`)) return;
+
+  try {
+    await requestJson(`/api/${type === "email" ? "emails" : "messages"}/${encodeURIComponent(entry.id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    await loadCommunications(false);
+    showStatus(`${label[0].toUpperCase()}${label.slice(1)} deleted.`);
+  } catch (error) {
+    showStatus(error.message || `Could not delete the ${label}.`, true);
+  }
 }
 
 async function loadProjects() {
@@ -178,4 +276,5 @@ projectForm.addEventListener("submit", async (event) => {
 
 cancelButton.addEventListener("click", resetForm);
 document.querySelector("#refresh-projects").addEventListener("click", loadProjects);
+document.querySelector("#load-communications").addEventListener("click", () => loadCommunications());
 loadProjects();

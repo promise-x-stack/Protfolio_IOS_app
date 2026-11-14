@@ -3,7 +3,8 @@
 ## Run with XAMPP
 
 1. Start **MySQL** in the XAMPP Control Panel. The API creates the configured
-   database and `projects` table automatically on its first project request.
+   database and its `projects`, `messages`, and `emails` tables on the first
+   database request.
 2. In PowerShell, from `BackEnd`, set the MySQL settings if they differ from the
    XAMPP defaults:
 
@@ -50,5 +51,25 @@ Category listing routes remain available at `/api/products/portfolio`,
 `/api/products/productivity`.
 
 The developer CRUD page is available at `/Gui`. It lists projects from the
-database and requires the configured admin token for create, update, and delete
-actions.
+database and requires the configured admin token for project create, update,
+and delete actions. The same page displays incoming messages and emails and
+allows the owner to delete them. Inbox reads and deletions require the admin
+token; public contact submissions do not.
+
+## Portfolio contact API
+
+The portfolio stores contact submissions in separate tables within the
+configured database:
+
+| Method | Route | Description |
+| --- | --- | --- |
+| POST | `/message-user-data` | Save a visitor message |
+| POST | `/mail-user-data` | Save a visitor email/contact form |
+| GET | `/api/messages` | List messages (admin token required) |
+| DELETE | `/api/messages/<id>` | Delete a message (admin token required) |
+| GET | `/api/emails` | List emails (admin token required) |
+| DELETE | `/api/emails/<id>` | Delete an email (admin token required) |
+
+Messages accept the existing `userMassege` string or object payload. Email
+submissions accept an `email` object with `Sender`, `Subject`, `Message`, and
+`DateSent` fields.

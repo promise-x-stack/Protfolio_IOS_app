@@ -76,6 +76,33 @@
                 </div>
                 <div id="project-list" class="project-list"></div>
             </section>
+
+            <section class="panel communications-panel" aria-labelledby="communications-heading">
+                <div class="section-heading list-heading">
+                    <div>
+                        <p class="eyebrow">Portfolio inbox</p>
+                        <h2 id="communications-heading">Messages and emails</h2>
+                    </div>
+                    <button id="load-communications" class="secondary-button" type="button">
+                        Load inbox
+                    </button>
+                </div>
+                <p class="inbox-help">Enter your admin token above, then load the inbox.</p>
+                <div class="communications-grid">
+                    <section aria-labelledby="messages-heading">
+                        <h3 id="messages-heading">Messages</h3>
+                        <div id="message-list" class="communication-list">
+                            <p class="empty-list">Inbox not loaded.</p>
+                        </div>
+                    </section>
+                    <section aria-labelledby="emails-heading">
+                        <h3 id="emails-heading">Emails</h3>
+                        <div id="email-list" class="communication-list">
+                            <p class="empty-list">Inbox not loaded.</p>
+                        </div>
+                    </section>
+                </div>
+            </section>
         </div>
     </main>
 {% endblock %}

@@ -1,4 +1,3 @@
-import React from "react"
 import { useState } from "react";
 import PopUp from "./Notification";
 import MassageNav from "./massageNav";
@@ -10,30 +9,41 @@ function MassagePage(){
     const date = new Date().toLocaleDateString()
 
     const [Text,setText] = useState("")
+    const [sendStatus, setSendStatus] = useState("")
 
     async function user(masege) {
-        await fetch("http://127.0.0.1:5000/message-user-data",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-                "userMassege":{
-                    "dateSent":`${date}`,
-                    "massege":`${masege}`
-                }
-            })
-        })
-        .then(Response=>Response.json())
-        .then(data=>console.log(data))
+        try {
+            const response = await fetch("http://127.0.0.1:5000/message-user-data", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userMassege: {
+                        dateSent: date,
+                        massege: masege,
+                    },
+                }),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(result.error || "Could not send your message.");
+            }
+            setSendStatus("Your message was sent to the portfolio owner.");
+        } catch (error) {
+            setSendStatus(error.message || "Could not send your message.");
+        }
     }
 
     const [popUp, setpopUp] = useState()
     function Sendmsg(){
         const text = document.getElementById("textInput")
-        setText(text.value)
+        const message = text.value.trim()
+        if (!message) {
+            setSendStatus("Type a message before sending.")
+            return
+        }
+        setText(message)
+        setSendStatus("")
         setpopUp(true)
-        /*
-        user(Text)
-        */
         
     }
     function displayPopUp(){
@@ -48,6 +58,7 @@ function MassagePage(){
                     <MassageNav backicon={<i className="fas fa-chevron-left"></i>} usericon="👩🏼‍🦰" homeicon={<i className="fas fa-house"></i>}/>
                     <Chatbox usertext={Text}/>
                     <InputText func={Sendmsg} icon={<i className="fas fa-paper-plane"></i>}/>
+                    <p className="message-api-status" role="status" aria-live="polite">{sendStatus}</p>
                     {popUp && <PopUp func={displayPopUp}/>}
                 </div>
             </section>

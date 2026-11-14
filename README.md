@@ -11,6 +11,8 @@ the developer page at `/Gui` manages those records.
 - XAMPP/MySQL database and project table created automatically on first API use.
 - Browser project-list caching with offline fallback.
 - Token-protected project administration page.
+- Contact messages and emails saved in separate MySQL tables and managed from
+  the owner inbox in `/Gui`.
 
 ## Requirements
 
@@ -64,9 +66,13 @@ Open the Vite URL printed in the terminal. The API defaults to
 
 Open `http://127.0.0.1:5000/Gui`. Enter the backend's
 `PROJECTS_ADMIN_TOKEN` to add, edit, or delete projects. The token is required
-for write operations and is not saved by the page. Do not put this token in the
-public frontend or expose the development API without HTTPS and appropriate
-access controls.
+for project writes and for reading or deleting visitor messages and emails.
+It is not saved by the page. Do not put this token in the public frontend or
+expose the development API without HTTPS and appropriate access controls.
+
+The portfolio's message and email forms submit to the Flask API. Submissions
+are stored separately in the `messages` and `emails` tables and appear in the
+admin page's inbox.
 
 Project records use `projectName`, `category`, `link`, `logo`, and `ratings`.
 The category endpoints recognize `portfolio`, `entertainment`, `community`,

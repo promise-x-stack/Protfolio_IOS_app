@@ -3,6 +3,12 @@
     background-color: rgb(252, 252, 252);
     border-radius: 20px;
 }
+.mail-api-status{
+    margin: 0;
+    padding: 7px 14px;
+    color: rgb(38, 91, 56);
+    font-size: 0.85rem;
+}
 .pop--up-container{
     transform: translatex(-1cm) translatey(-0.3cm);
     position: absolute;

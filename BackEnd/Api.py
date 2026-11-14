@@ -1,8 +1,8 @@
 import hmac
-import json
 import os
 import re
 import threading
+from datetime import datetime, timezone
 
 import mysql.connector
 from flask import Flask, jsonify, render_template, request
@@ -16,7 +16,7 @@ MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
 MYSQL_USER = os.getenv("MYSQL_USER", "root")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
 MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "portfolio_db")
-PROJECTS_ADMIN_TOKEN = os.getenv("PROJECTS_ADMIN_TOKEN", "")
+PROJECTS_ADMIN_TOKEN = os.getenv("PROJECTS_ADMIN_TOKEN", "f2520635350dc35cd20c623450f4a5ab6ee21ee77b75b2dfd4fd6fb7ddb170ca")
 
 _database_initialized = False
 _database_initialization_lock = threading.Lock()
@@ -89,6 +89,30 @@ def _initialize_database():
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                         ON UPDATE CURRENT_TIMESTAMP,
                     INDEX idx_projects_category (category)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                """
+            )
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    message_text TEXT NOT NULL,
+                    date_sent VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_messages_created_at (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                """
+            )
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS emails (
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    sender VARCHAR(320) NOT NULL,
+                    subject_line VARCHAR(255) NOT NULL,
+                    message_text TEXT NOT NULL,
+                    date_sent VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_emails_created_at (created_at)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                 """
             )
@@ -380,32 +404,202 @@ def productivity_product():
 
 @app.route("/message-user-data", methods=["POST"])
 def Message():
-    data = request.get_json()
-    user = data.get("userMassege") if isinstance(data, dict) else None
-    if user is None:
-        return jsonify({"error": "userMassege is required"}), 400
+    data = request.get_json(silent=True)
+    user_message = data.get("userMassege") if isinstance(data, dict) else None
+    if isinstance(user_message, str):
+        body = user_message.strip()
+        date_sent = datetime.now(timezone.utc).isoformat()
+    elif isinstance(user_message, dict):
+        body = user_message.get("massege", user_message.get("message"))
+        date_sent = user_message.get("dateSent", datetime.now(timezone.utc).isoformat())
+    else:
+        return jsonify({"error": "userMassege must be a message string or object"}), 400
+    if not isinstance(body, str) or not body.strip():
+        return jsonify({"error": "A non-empty message is required"}), 400
+    if not isinstance(date_sent, str) or len(date_sent) > 100:
+        return jsonify({"error": "dateSent must be 100 characters or fewer"}), 400
+    body = body.strip()
+    if len(body) > 10000:
+        return jsonify({"error": "Message must be 10000 characters or fewer"}), 400
+
     try:
-        with open(".json/masege.json", "w", encoding="utf-8") as file:
-            json.dump(user, file, indent=3)
-        return jsonify({"Responce": "Masege Data recived"}), 200
-    except OSError as error:
-        app.logger.error("Could not save message data: %s", error, exc_info=True)
-        return jsonify({"Error": "Could not save message data"}), 500
+        connection = get_database_connection()
+        try:
+            cursor = connection.cursor()
+            cursor.execute(
+                "INSERT INTO messages (message_text, date_sent) VALUES (%s, %s)",
+                (body, date_sent),
+            )
+            message_id = cursor.lastrowid
+            connection.commit()
+            cursor.close()
+        finally:
+            connection.close()
+        return jsonify({"id": message_id, "response": "Message received"}), 201
+    except mysql.connector.Error as error:
+        return _database_error(error)
 
 
 @app.route("/mail-user-data", methods=["POST"])
 def Mails():
-    data = request.get_json()
-    new_data = data.get("email") if isinstance(data, dict) else None
-    if new_data is None:
-        return jsonify({"error": "email is required"}), 400
+    data = request.get_json(silent=True)
+    email_data = data.get("email") if isinstance(data, dict) else None
+    if not isinstance(email_data, dict):
+        return jsonify({"error": "email must be an object"}), 400
+
+    sender = email_data.get("Sender", email_data.get("sender"))
+    subject = email_data.get("Subject", email_data.get("subject"))
+    body = email_data.get("Message", email_data.get("message"))
+    date_sent = email_data.get(
+        "DateSent",
+        email_data.get("dateSent", datetime.now(timezone.utc).isoformat()),
+    )
+    fields = {
+        "Sender": (sender, 320),
+        "Subject": (subject, 255),
+        "Message": (body, 20000),
+        "DateSent": (date_sent, 100),
+    }
+    for field, (value, limit) in fields.items():
+        if not isinstance(value, str) or not value.strip():
+            return jsonify({"error": f"{field} is required"}), 400
+        if len(value.strip()) > limit:
+            return jsonify({"error": f"{field} must be {limit} characters or fewer"}), 400
+
     try:
-        with open(".json/email.json", "w", encoding="utf-8") as file:
-            json.dump(new_data, file, indent=3)
-        return jsonify({"Response": "Email data recived"}), 200
-    except OSError as error:
-        app.logger.error("Could not save email data: %s", error, exc_info=True)
-        return jsonify({"Error": "Could not save email data"}), 500
+        connection = get_database_connection()
+        try:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                INSERT INTO emails (sender, subject_line, message_text, date_sent)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (
+                    sender.strip(),
+                    subject.strip(),
+                    body.strip(),
+                    date_sent.strip(),
+                ),
+            )
+            email_id = cursor.lastrowid
+            connection.commit()
+            cursor.close()
+        finally:
+            connection.close()
+        return jsonify({"id": email_id, "response": "Email received"}), 201
+    except mysql.connector.Error as error:
+        return _database_error(error)
+
+
+@app.route("/api/messages", methods=["GET"])
+def list_messages():
+    authorized, response = _admin_authorized()
+    if not authorized:
+        return response
+    try:
+        connection = get_database_connection()
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(
+                """
+                SELECT id, message_text, date_sent, created_at
+                FROM messages ORDER BY id DESC
+                """
+            )
+            result = [
+                {
+                    "id": row["id"],
+                    "message": row["message_text"],
+                    "dateSent": row["date_sent"],
+                    "createdAt": row["created_at"],
+                }
+                for row in cursor.fetchall()
+            ]
+            cursor.close()
+        finally:
+            connection.close()
+        return jsonify(result), 200
+    except mysql.connector.Error as error:
+        return _database_error(error)
+
+
+@app.route("/api/messages/<int:message_id>", methods=["DELETE"])
+def delete_message(message_id):
+    authorized, response = _admin_authorized()
+    if not authorized:
+        return response
+    try:
+        connection = get_database_connection()
+        try:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM messages WHERE id = %s", (message_id,))
+            deleted = cursor.rowcount
+            connection.commit()
+            cursor.close()
+        finally:
+            connection.close()
+        if not deleted:
+            return jsonify({"error": "Message not found"}), 404
+        return "", 204
+    except mysql.connector.Error as error:
+        return _database_error(error)
+
+
+@app.route("/api/emails", methods=["GET"])
+def list_emails():
+    authorized, response = _admin_authorized()
+    if not authorized:
+        return response
+    try:
+        connection = get_database_connection()
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(
+                """
+                SELECT id, sender, subject_line, message_text, date_sent, created_at
+                FROM emails ORDER BY id DESC
+                """
+            )
+            result = [
+                {
+                    "id": row["id"],
+                    "sender": row["sender"],
+                    "subject": row["subject_line"],
+                    "message": row["message_text"],
+                    "dateSent": row["date_sent"],
+                    "createdAt": row["created_at"],
+                }
+                for row in cursor.fetchall()
+            ]
+            cursor.close()
+        finally:
+            connection.close()
+        return jsonify(result), 200
+    except mysql.connector.Error as error:
+        return _database_error(error)
+
+
+@app.route("/api/emails/<int:email_id>", methods=["DELETE"])
+def delete_email(email_id):
+    authorized, response = _admin_authorized()
+    if not authorized:
+        return response
+    try:
+        connection = get_database_connection()
+        try:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM emails WHERE id = %s", (email_id,))
+            deleted = cursor.rowcount
+            connection.commit()
+            cursor.close()
+        finally:
+            connection.close()
+        if not deleted:
+            return jsonify({"error": "Email not found"}), 404
+        return "", 204
+    except mysql.connector.Error as error:
+        return _database_error(error)
 
 
 @app.route("/Gui", methods=["GET"])

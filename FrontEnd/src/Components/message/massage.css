@@ -109,6 +109,18 @@
     border: none;
     overflow: hidden;
 }
+
+.message-api-status{
+    position: fixed;
+    left: 0;
+    bottom: 68px;
+    width: 100%;
+    margin: 0;
+    padding: 8px 14px;
+    color: rgb(16, 16, 34);
+    text-align: center;
+    pointer-events: none;
+}
 @media(min-width: 760px){
     .input--container{
         width: 70%;

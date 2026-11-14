@@ -1,5 +1,4 @@
-import React from "react";
-import { useState, useEffect} from "react";
+import { useState } from "react";
 import "./Apple.css"
 
 const date = new Date().toLocaleDateString()
@@ -65,55 +64,60 @@ function Applemail(props){
     const [from, setfrom] = useState()
     const [subject, setsubject] = useState()
     const [count, setcount] = useState(0)
+    const [sendStatus, setSendStatus] = useState("")
+
+    async function saveEmail(emailData) {
+        setSendStatus("Sending email to the portfolio owner...");
+        try {
+            const response = await fetch("http://127.0.0.1:5000/mail-user-data", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: emailData }),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(result.error || "Could not send your email.");
+            }
+            setcount((currentCount) => currentCount + 1);
+            setSendStatus("Your email was sent to the portfolio owner.");
+        } catch (error) {
+            setSendStatus(error.message || "Could not send your email.");
+        }
+    }
 
     function unsend(){
         const Subject = document.getElementById("Subject");
         const From = document.getElementById("From");
         const message = document.getElementById("message");
 
-        const list = [];
-
         function Data(sub,frm,msg){
-            setmassaging(e=>e=msg)
-            setfrom(e=>e=frm)
-            setsubject(e=>e=sub)
-            
-            const EmploeyerData={
-                "Sender":frm,
-                "Subject":sub,
-                "Message":msg,
-                "DateSent":date
-            }
-            list.push(EmploeyerData)
-            //console.log(list)
-
+            setmassaging(msg)
+            setfrom(frm)
+            setsubject(sub)
+            setSendStatus("")
             settab(true)
-            
-            async function Mail(){
-                await fetch("http://127.0.0.1:5000/mail-user-data",{
-                    method:"POST",
-                    headers:{"Content-Type":"application/json"},
-                    body: JSON.stringify({"email":EmploeyerData})
-                })
-            }
-            Mail()
+            saveEmail({
+                Sender: frm,
+                Subject: sub,
+                Message: msg,
+                DateSent: date,
+            })
         }
-        if(Subject.value === "" && From.value === "" && message.value === ""){
+        if(Subject.value.trim() === "" && From.value.trim() === "" && message.value.trim() === ""){
             Subject.placeholder="Mail has no  Subject";
             From.placeholder="No senders addres";
             message.placeholder="Mail has no Massage";
-        }else if(Subject.value === ""){
+        }else if(Subject.value.trim() === ""){
             Subject.placeholder="Mail has no  Subject";
-        }else if(From.value === ""){
+        }else if(From.value.trim() === ""){
             From.placeholder="No senders addres";
-        }else if(message.value === ""){
+        }else if(message.value.trim() === ""){
             message.placeholder ="Mail has no Massage";
         }else{
-            const subje = Subject.value;
-            const fro = From.value;
-            const msge = message.value;
+            const subje = Subject.value.trim();
+            const fro = From.value.trim();
+            const msge = message.value.trim();
             Data(subje, fro, msge)
-            setcount(count+1)
         }
         
         
@@ -256,6 +260,8 @@ function Applemail(props){
                     </div>}
 
                 </header>
+
+                {sendStatus && <p className="mail-api-status" role="status" aria-live="polite">{sendStatus}</p>}
 
                 {tab ? <div className="m">
                 <nav>
