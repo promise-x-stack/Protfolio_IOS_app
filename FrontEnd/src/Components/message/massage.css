@@ -11,7 +11,7 @@
     height: 100%;
 }
 :root{
-    --img: url("src/assets/1000008304.jpg");
+    --img: url("../../assets/1000008304.jpg");
 }
 .massg-container{
     width: 100%;

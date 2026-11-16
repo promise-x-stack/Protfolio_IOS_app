@@ -1,359 +1,215 @@
 import { useState } from "react";
-import "./Apple.css"
+import "./Apple.css";
 
-const date = new Date().toLocaleDateString()
+const today = new Date().toLocaleDateString();
+const inboxMessages = [
+  {
+    id: "apple",
+    sender: "Apple ID",
+    address: "apple@id.apple.com",
+    subject: "Your Apple ID was used to sign in",
+    date: "Tue, 8:30 AM",
+    text: "A new device was used to sign in to your Apple ID. If this was not you, review your account security.",
+    recipient: "user@macbook.com",
+  },
+  {
+    id: "portfolio",
+    sender: "Promise_X",
+    address: "promise0X@gmail.com",
+    subject: "Website Project",
+    date: "Thu, 9:30 AM",
+    text: "Check out this new project before it is unpublished: https://github.com/Promise254",
+    recipient: "user@macbook.com",
+  },
+];
 
-function Applemail(props){
-    const [sent, setsent] = useState(false)
-    const [inbox, setinbox] = useState(true)
-    const [draft, setdraft] = useState(false)
-    const [trasher, settrasher] = useState(false)
+const emptyDraft = { sender: "", subject: "", message: "" };
 
-    function Inboxbox(){
-        setinbox(true)
-        setsent(false)
-        setdraft(false)
-        settrasher(false)
-    }
-    function sentt(){
-        setsent(true)
-        setinbox(false)
-        setdraft(false)
-        settrasher(false)
-    }
-    function Drafter(){
-        setdraft(true)
-        setsent(false)
-        setinbox(false)
-        settrasher(false)
-    }
-    function Ttrash(){
-        settrasher(true)
-        setsent(false)
-        setinbox(false)
-        setdraft(false)
-    }
+function AppleMail() {
+  const [mailbox, setMailbox] = useState("inbox");
+  const [selectedMessage, setSelectedMessage] = useState(inboxMessages[0]);
+  const [sentMessages, setSentMessages] = useState([]);
+  const [isComposing, setIsComposing] = useState(false);
+  const [draft, setDraft] = useState(emptyDraft);
+  const [sendStatus, setSendStatus] = useState("");
 
-    const [sented, setsented] = useState(false)
-    const [apple, setapple] = useState(false)
-    const [pro, setpro] = useState(false)
+  const visibleMessages = mailbox === "inbox" ? inboxMessages : mailbox === "sent" ? sentMessages : [];
 
-    function applef(){
-        setapple(true)
-        setpro(false)
-        setsented(false)
-    }
-    function promis(){
-        setapple(false)
-        setpro(true)
-        setsented(false)
-    }
-    function sendder(){
-        setsented(true)
-        setapple(false)
-        setpro(false)
+  async function sendEmail(event) {
+    event.preventDefault();
+    const message = {
+      id: `sent-${Date.now()}`,
+      sender: draft.sender.trim(),
+      address: draft.sender.trim(),
+      subject: draft.subject.trim(),
+      date: today,
+      text: draft.message.trim(),
+      recipient: "PromiseDev@gmail.com",
+    };
+
+    if (!message.sender || !message.subject || !message.text) {
+      setSendStatus("Enter your email address, a subject, and a message before sending.");
+      return;
     }
 
-    const [tab, settab] = useState(true)
+    setSendStatus("Sending email to the portfolio owner...");
+    try {
+      const response = await fetch("http://127.0.0.1:5000/mail-user-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: {
+            Sender: message.sender,
+            Subject: message.subject,
+            Message: message.text,
+            DateSent: message.date,
+          },
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || "Could not send your email.");
+      }
 
-
-    function sendtext(){
-        settab(false)
+      setSentMessages((current) => [message, ...current]);
+      setSelectedMessage(message);
+      setMailbox("sent");
+      setDraft(emptyDraft);
+      setIsComposing(false);
+      setSendStatus("Your email was sent to the portfolio owner.");
+    } catch (error) {
+      setSendStatus(error instanceof Error ? error.message : "Could not send your email.");
     }
-    const [massaging, setmassaging] = useState()
-    const [from, setfrom] = useState()
-    const [subject, setsubject] = useState()
-    const [count, setcount] = useState(0)
-    const [sendStatus, setSendStatus] = useState("")
+  }
 
-    async function saveEmail(emailData) {
-        setSendStatus("Sending email to the portfolio owner...");
-        try {
-            const response = await fetch("http://127.0.0.1:5000/mail-user-data", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: emailData }),
-            });
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(result.error || "Could not send your email.");
-            }
-            setcount((currentCount) => currentCount + 1);
-            setSendStatus("Your email was sent to the portfolio owner.");
-        } catch (error) {
-            setSendStatus(error.message || "Could not send your email.");
-        }
-    }
+  function openMailbox(nextMailbox) {
+    setMailbox(nextMailbox);
+    setIsComposing(false);
+    const nextMessages = nextMailbox === "inbox" ? inboxMessages : nextMailbox === "sent" ? sentMessages : [];
+    setSelectedMessage(nextMessages[0] || null);
+    setSendStatus("");
+  }
 
-    function unsend(){
-        const Subject = document.getElementById("Subject");
-        const From = document.getElementById("From");
-        const message = document.getElementById("message");
+  return (
+    <div className="mail-app">
+      <div className="mail-container">
+        <header className="mail-header">
+          <div className="mail-window-lights" aria-hidden="true">
+            <span className="mail-dot mail-dot-red" />
+            <span className="mail-dot mail-dot-yellow" />
+            <span className="mail-dot mail-dot-green" />
+          </div>
+          <strong className="mail-window-title">Mail</strong>
+          <button
+            className="mail-compose-button"
+            type="button"
+            onClick={() => {
+              setIsComposing(true);
+              setSendStatus("");
+            }}
+          >
+            <i className="fas fa-pen" aria-hidden="true" />
+            <span>New Message</span>
+          </button>
+        </header>
 
-        function Data(sub,frm,msg){
-            setmassaging(msg)
-            setfrom(frm)
-            setsubject(sub)
-            setSendStatus("")
-            settab(true)
-            saveEmail({
-                Sender: frm,
-                Subject: sub,
-                Message: msg,
-                DateSent: date,
-            })
-        }
-        if(Subject.value.trim() === "" && From.value.trim() === "" && message.value.trim() === ""){
-            Subject.placeholder="Mail has no  Subject";
-            From.placeholder="No senders addres";
-            message.placeholder="Mail has no Massage";
-        }else if(Subject.value.trim() === ""){
-            Subject.placeholder="Mail has no  Subject";
-        }else if(From.value.trim() === ""){
-            From.placeholder="No senders addres";
-        }else if(message.value.trim() === ""){
-            message.placeholder ="Mail has no Massage";
-        }else{
-            const subje = Subject.value.trim();
-            const fro = From.value.trim();
-            const msge = message.value.trim();
-            Data(subje, fro, msge)
-        }
-        
-        
-    }
+        {sendStatus && <p className="mail-api-status" role="status" aria-live="polite">{sendStatus}</p>}
 
-    function ElementCard(props){
-        return(
-            <>
-                <div className="element-card">
-                    <div className="header">
-                        <h4>{props.username}</h4>
-                        <p>{props.date}</p>
-                    </div>
-                    <div className="card-text-container">
-                        <h6>{props.tittle}</h6>
-                        <p>{props.text}</p>
-                    </div>
-                </div>
-            </>
-        )
-    }
-
-    function Card(props){
-        return(
-            <>
-             <div className="applemail-card">
-                <div className="header--card"><h6>{props.header}</h6></div>
-                <div className="container--card">
-
-                    {inbox &&<div className="inbox">
-
-                        <div onClick={applef}>
-                            <ElementCard
-                                username="Apple ID"
-                                date="Tue, 8:30 AM"
-                                tittle="Your Apple ID was used to sighn in"
-                                text="A new device was used to sihn in into your Apple ID. If this wasent..."
-                            />
-                        </div>
-
-                        <div onClick={promis}>
-                            <ElementCard
-                                username="Promise_X"
-                                date="Thu, 9:30 AM"
-                                tittle="Websight Project"
-                                text="Check out this new prject before it's to late..."
-                            />
-                        </div>
-
-                    </div>}
-
-                    {sent && <div className="sent--text">
-
-                        {count >= 1 && <div onClick={sendder}>
-                            <ElementCard
-                                username="PromiseDev@gmail.com"
-                                date={date}
-                                tittle={subject}
-                                text={massaging}
-                            />
-                        </div>}
-
-                    </div>}
-
-                    {draft && <div className="sent--text">
-
-                        <div className="draft--d">
-                            <i className="fas fa-file-alt"></i>
-                            <p>There is no draft</p>
-                        </div>
-
-                    </div>}
-
-                    {trasher && <div className="sent--text">
-
-                        <div className="draft--d">
-                            <i className="fas fa-trash-alt"></i>
-                            <p>There is no Trash</p>
-                        </div>
-
-                    </div>}
-                    
-                </div>
-             </div>
-            </>
-        )
-    }
-
-    function Mailtext(props){
-
-        return(
-            <>
-                <div className="mail--container">
-                    <div className="text--header">
-                        <h1>{props.header}</h1>
-                        <div>
-                            <span><label>From:</label><p>{props.from}</p></span>
-                            <span><label>To:</label><p>{props.to}</p></span>
-                            <span><label>Date:</label><p>{props.date}</p></span>
-                        </div>
-                    </div>
-                    <div className="text--body">
-                        <p>{props.text}</p>
-                    </div>
-                    <div className="text--footer">
-                        <p><i className="fas fa-reply-all"></i> Reply, Fowarded, Achive (mac OS style)</p>
-                    </div>
-                </div>
-            </>
-        )
-
-    }
-
-    
-
-    return(
-
-        <>
-         
-        <div className="pop--up-container">
-            <div className="mail-container">
-                <header>
-                    <div className="dot-container">
-                        <div onClick={props.func} className="dot red"></div>
-                        <div className="dot yellow"></div>
-                        <div className="dot green"></div>
-                    </div>
-
-                    <div className="window-title">
-                        <i className="fas fa-envelope-open-text"></i> Mail
-                    </div>
-
-                    {tab == false && <div className="submit--btn">
-
-                        <div className="container--option">
-                            <h3>Aa</h3>
-                            <h3>😊</h3>
-                        </div>
-                        <button onClick={unsend} type="submit"><i className="fas fa-paper-plane"></i></button>
-                    </div>}
-
-                </header>
-
-                {sendStatus && <p className="mail-api-status" role="status" aria-live="polite">{sendStatus}</p>}
-
-                {tab ? <div className="m">
-                <nav>
-                    <button onClick={sendtext}><i className="fas fa-pen-fancy"></i> New Message</button>
-
-                    <div>
-                        <i className="fas fa-search"></i> <span>Search Mail</span>
-                    </div>
-                </nav>
-
-                <section className="main--section">
-
-                    <aside>
-                        <div>
-                            <ul>
-                                <li><button onClick={Inboxbox}><div><i className="fas fa-inbox"></i><p>Inbox</p></div><span>2</span></button></li>
-                                <li><button onClick={sentt}><div><i className="fas fa-paper-plane"></i><p>Sent</p></div><span>{count}</span></button></li>
-                                <li><button onClick={Drafter}><div><i className="fas fa-file-alt"></i><p>Draft</p></div><span>0</span></button></li>
-                                <li><button onClick={Ttrash}><div><i className="fas fa-trash-alt"></i><p>Trash</p></div><span>0</span></button></li>
-                            </ul>
-                        </div>
-                    </aside>
-
-                    <div className="email--msg">
-                        {inbox && <Card header="Inbox"/>}
-                        {sent && <Card header="Sent"/>}
-                        {draft && <Card header="Draft"/>}
-                        {trasher && <Card header="Trash"/>}
-                    </div>
-
-                    <div className="email--msg-text">
-                        {apple && <Mailtext
-                            header="Your Apple ID was used to sighn in"
-                            from="Apple ID <apple@id.apple.com>"
-                            to="user@macbook.com"
-                            date="Tue, 8:30 AM"
-                            text="Some one tryde to use your macbook acount to log in"
-                        />}
-                        {pro && <Mailtext
-                            header="Websight Project"
-                            from="promise0X@gmail.com"
-                            to="user@macbook.com"
-                            date="Thu, 9:30 AM"
-                            text="Check out this new prject before it's to late and the project is unpublished. https://github.com/Promise254"
-                        />}
-                        {sented && <Mailtext
-                            header={subject}
-                            from={from}
-                            to="PromiseDev@gmail.com"
-                            date={date}
-                            text={massaging}
-                        />}
-                    </div>
-
-                </section></div>
-                :
-                <section className="text--composer">
-                    <div className="text--composer-container">
-                            <form>
-                                <div className="form--input-div">
-                                    <label>To: </label>
-                                    <input type="text" value="promiseDev@gmail.com"/>
-                                </div>
-
-                                <div className="form--input-div">
-                                    <label>Cc: </label>
-                                    <input type="text" value="Carbon copy"/>
-                                </div>
-
-                                <div className="form--input-div">
-                                    <label>Subject: </label>
-                                    <input type="text" id="Subject"/>
-                                </div>
-
-                                <div className="form--input-div">
-                                    <label>From: </label>
-                                    <input type="text" id="From"/>
-                                </div>
-                                
-                                <div className="form--input-div text">
-                                    <textarea placeholder="Massege" id="message"></textarea>
-                                </div>
-                            </form>
-                    </div>
-                </section>}
-
+        {isComposing ? (
+          <form className="mail-composer" onSubmit={sendEmail}>
+            <div className="mail-composer-recipient"><span>To</span><strong>PromiseDev@gmail.com</strong></div>
+            <label className="mail-composer-field">
+              <span>From</span>
+              <input
+                type="email"
+                autoComplete="email"
+                value={draft.sender}
+                onChange={(event) => setDraft((current) => ({ ...current, sender: event.target.value }))}
+                placeholder="Your email address"
+                required
+              />
+            </label>
+            <label className="mail-composer-field">
+              <span>Subject</span>
+              <input
+                type="text"
+                value={draft.subject}
+                onChange={(event) => setDraft((current) => ({ ...current, subject: event.target.value }))}
+                placeholder="Add a subject"
+                required
+              />
+            </label>
+            <textarea
+              className="mail-composer-message"
+              value={draft.message}
+              onChange={(event) => setDraft((current) => ({ ...current, message: event.target.value }))}
+              placeholder="Write your message..."
+              required
+            />
+            <div className="mail-composer-actions">
+              <button type="button" className="mail-cancel-button" onClick={() => setIsComposing(false)}>Cancel</button>
+              <button type="submit" className="mail-send-button">
+                <i className="fas fa-paper-plane" aria-hidden="true" /> Send
+              </button>
             </div>
-        </div>
-        
-        </>
+          </form>
+        ) : (
+          <div className="mail-main">
+            <aside className="mail-sidebar" aria-label="Mailboxes">
+              <button className={mailbox === "inbox" ? "selected" : ""} type="button" onClick={() => openMailbox("inbox")}>
+                <span><i className="fas fa-inbox" aria-hidden="true" /> Inbox</span><span>{inboxMessages.length}</span>
+              </button>
+              <button className={mailbox === "sent" ? "selected" : ""} type="button" onClick={() => openMailbox("sent")}>
+                <span><i className="fas fa-paper-plane" aria-hidden="true" /> Sent</span><span>{sentMessages.length}</span>
+              </button>
+              <button className={mailbox === "draft" ? "selected" : ""} type="button" onClick={() => openMailbox("draft")}>
+                <span><i className="fas fa-file-alt" aria-hidden="true" /> Draft</span><span>0</span>
+              </button>
+              <button className={mailbox === "trash" ? "selected" : ""} type="button" onClick={() => openMailbox("trash")}>
+                <span><i className="fas fa-trash-alt" aria-hidden="true" /> Trash</span><span>0</span>
+              </button>
+            </aside>
 
-    )
+            <section className="mail-message-list" aria-label={`${mailbox} messages`}>
+              {visibleMessages.length ? visibleMessages.map((message) => (
+                <button
+                  type="button"
+                  key={message.id}
+                  className={`mail-message-row ${selectedMessage?.id === message.id ? "selected" : ""}`}
+                  onClick={() => setSelectedMessage(message)}
+                >
+                  <span className="mail-message-row-heading"><strong>{message.sender}</strong><time>{message.date}</time></span>
+                  <strong className="mail-message-subject">{message.subject}</strong>
+                  <span className="mail-message-preview">{message.text}</span>
+                </button>
+              )) : (
+                <div className="mail-empty-state">
+                  <i className={`fas ${mailbox === "draft" ? "fa-file-alt" : mailbox === "trash" ? "fa-trash-alt" : "fa-paper-plane"}`} aria-hidden="true" />
+                  <span>No messages in {mailbox}.</span>
+                </div>
+              )}
+            </section>
+
+            <article className="mail-message-detail">
+              {selectedMessage ? (
+                <>
+                  <h1>{selectedMessage.subject}</h1>
+                  <dl>
+                    <div><dt>From</dt><dd>{selectedMessage.sender} &lt;{selectedMessage.address}&gt;</dd></div>
+                    <div><dt>To</dt><dd>{selectedMessage.recipient}</dd></div>
+                    <div><dt>Date</dt><dd>{selectedMessage.date}</dd></div>
+                  </dl>
+                  <p className="mail-message-body">{selectedMessage.text}</p>
+                </>
+              ) : (
+                <div className="mail-empty-detail">Select a message to read it.</div>
+              )}
+            </article>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export default Applemail
+export default AppleMail;

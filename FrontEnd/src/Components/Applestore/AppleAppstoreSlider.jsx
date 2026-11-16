@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 // Default app data – Apple Store style
 const defaultApps = [
@@ -88,6 +88,7 @@ const AppleAppSlider = ({ apps = defaultApps }) => {
   const viewportRef = useRef(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const touchStartY = useRef(0);
   const isSwiping = useRef(false);
 
   const totalSlides = apps.length;
@@ -147,12 +148,17 @@ const AppleAppSlider = ({ apps = defaultApps }) => {
   //////////////////
   // Handle resize
   useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return undefined;
+
     updateDimensions();
-    const handleResize = () => {
-      updateDimensions();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateDimensions);
+    observer?.observe(viewport);
+    window.addEventListener('resize', updateDimensions);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', updateDimensions);
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, [updateDimensions]);
 
   // Update track position when slideWidth or currentIndex changes
@@ -170,18 +176,6 @@ const AppleAppSlider = ({ apps = defaultApps }) => {
     isSwiping.current = true;
   };
 
-  const onTouchMove = (e) => {
-    if (!isSwiping.current || isTransitioning) return;
-    const touch = e.touches[0];
-    const diffX = touch.clientX - touchStartX.current;
-    const diffY = touch.clientY - (touchStartY.current ?? touch.clientY);
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 12) {
-      e.preventDefault();
-      touchEndX.current = touch.clientX;
-    }
-  };
-
-  let touchStartY = useRef(0);
   const onTouchStartWithY = (e) => {
     touchStartY.current = e.touches[0].clientY;
     onTouchStart(e);
@@ -329,6 +323,7 @@ const AppleAppSlider = ({ apps = defaultApps }) => {
         .app-slider-wrapper {
           max-width: 1280px;
           width: 100%;
+          min-width: 0;
           margin: 0 auto;
           background: rgba(255, 255, 255, 0.81);
           backdrop-filter: blur(12px);
@@ -369,6 +364,8 @@ const AppleAppSlider = ({ apps = defaultApps }) => {
         }
         .slider-viewport {
           position: relative;
+          width: 100%;
+          min-width: 0;
           overflow: hidden;
           border-radius: 48px;
           margin: 1rem 0 2rem;
@@ -376,10 +373,14 @@ const AppleAppSlider = ({ apps = defaultApps }) => {
         }
         .slider-track {
           display: flex;
+          width: 100%;
+          min-width: 0;
           transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
           will-change: transform;
         }
         .slide-card {
+          min-width: 0;
+          max-width: 100%;
           background: white;
           border-radius: 44px;
           overflow: hidden;

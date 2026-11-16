@@ -5,7 +5,7 @@ import Chatbox from "./Chatbox";
 import InputText from "./InputText";
 import "./massage.css"
 
-function MassagePage(){
+function MassagePage({ embedded = false }){
     const date = new Date().toLocaleDateString()
 
     const [Text,setText] = useState("")
@@ -53,7 +53,7 @@ function MassagePage(){
 
     return(
         <>
-            <section id="mobileMassage" className="msgp">
+            <section id="mobileMassage" className={`msgp ${embedded ? "msgp-embedded" : ""}`}>
                 <div className="container">
                     <MassageNav backicon={<i className="fas fa-chevron-left"></i>} usericon="👩🏼‍🦰" homeicon={<i className="fas fa-house"></i>}/>
                     <Chatbox usertext={Text}/>

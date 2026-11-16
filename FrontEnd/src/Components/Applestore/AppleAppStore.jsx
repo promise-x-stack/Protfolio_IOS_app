@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./appleappstore.css"
 import AppleAppSlider from "./AppleAppstoreSlider";
 import Category from "./Category";
@@ -8,7 +8,7 @@ import ProductiveCategory from "./Aplestorecomponents/Productive";
 import CommunityCategory from "./Aplestorecomponents/Community";
 import PortfolioCategory from "./Aplestorecomponents/Portfolio";
 
-function AppleAppStore(prop){
+function AppleAppStore(){
 
     const [Entertainment, setEntertainment]= useState(false)
     const [Portfolio, setPortfolio]= useState(false)
@@ -30,25 +30,7 @@ function AppleAppStore(prop){
 
     return(
         <>
-            <div className="mail-container app--store">
-                {
-                window.innerWidth >= 1200 && <header className="header-c">
-                    <div className="do-container">
-                        <div onClick={prop.func} className="do red"></div>
-                        <div className="do yellow"></div>
-                        <div className="do green"></div>
-                    </div>
-                    <h2 className="h2--h"><i className="fas fa-apple-alt"></i> Projects</h2>
-                </header>
-                }   
-                {
-                    window.innerWidth < 1200 && <div className="new--nav-b">
-                        <button onClick={prop.func} className="nav-btn back-btn">
-                            <i className="fas fa-chevron-left"></i>
-                        </button>
-                        <h2 className="h2--h"><i className="fas fa-apple-alt"></i> Projects</h2>
-                        </div>
-                }
+            <div className="app--store">
                 <AppleAppSlider/>
                 <Category
                     productive={ProductiveFunct}

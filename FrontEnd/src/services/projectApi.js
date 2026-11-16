@@ -52,7 +52,7 @@ async function responseJson(response) {
   return body;
 }
 
-export async function fetchProjects(category) {
+export async function fetchProjects(category, { onUpdate } = {}) {
   const key = cacheKey(category);
   const cached = readCache(key);
   if (cached && Date.now() - cached.savedAt < CACHE_TTL_MS) {
@@ -60,6 +60,22 @@ export async function fetchProjects(category) {
   }
 
   const route = category ? `/api/products/${encodeURIComponent(category)}` : "/api/products";
+  if (cached) {
+    fetch(`${API_BASE_URL}${route}`, { cache: "no-store" })
+      .then(responseJson)
+      .then((projects) => {
+        if (!Array.isArray(projects)) {
+          throw new Error("The project API returned an invalid response.");
+        }
+        writeCache(key, projects);
+        onUpdate?.(projects);
+      })
+      .catch((error) => {
+        console.warn("Could not refresh cached projects.", error);
+      });
+    return cached.data;
+  }
+
   try {
     const response = await fetch(`${API_BASE_URL}${route}`, { cache: "no-store" });
     const projects = await responseJson(response);

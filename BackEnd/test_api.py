@@ -55,7 +55,7 @@ class ProjectApiTests(unittest.TestCase):
         self.assertEqual(listed.headers["Cache-Control"], "public, max-age=60")
 
     def test_update_and_delete_project(self):
-        updated_project = {
+        replacement = {
             "id": 7,
             "projectName": "Replaced portfolio",
             "category": "portfolio",
@@ -63,15 +63,13 @@ class ProjectApiTests(unittest.TestCase):
             "logo": "",
             "ratings": "",
         }
+        partial_update = {**replacement, "projectName": "Updated portfolio"}
         with (
             patch.object(Api, "PROJECTS_ADMIN_TOKEN", "test-token"),
             patch.object(
                 Api.database,
                 "update_project",
-                side_effect=[
-                    updated_project,
-                    {**updated_project, "projectName": "Updated portfolio"},
-                ],
+                side_effect=[replacement, partial_update],
             ),
             patch.object(Api.database, "delete_project", return_value=True),
         ):
@@ -130,8 +128,8 @@ class ProjectApiTests(unittest.TestCase):
 
     def test_user_message_and_email_are_stored(self):
         with (
-            patch.object(Api.database, "create_message", return_value=12) as message,
-            patch.object(Api.database, "create_email", return_value=13) as email,
+            patch.object(Api.database, "create_message", return_value=12) as create_message,
+            patch.object(Api.database, "create_email", return_value=13) as create_email,
         ):
             message_response = self.client.post(
                 "/message-user-data",
@@ -156,8 +154,10 @@ class ProjectApiTests(unittest.TestCase):
 
         self.assertEqual(message_response.status_code, 201)
         self.assertEqual(email_response.status_code, 201)
-        message.assert_called_once_with("Hello from the portfolio", "11/15/2026")
-        email.assert_called_once_with(
+        create_message.assert_called_once_with(
+            "Hello from the portfolio", "11/15/2026"
+        )
+        create_email.assert_called_once_with(
             "visitor@example.com",
             "Project inquiry",
             "Please contact me.",
@@ -165,48 +165,24 @@ class ProjectApiTests(unittest.TestCase):
         )
 
     def test_messages_and_emails_are_private_and_deletable(self):
-        message_row = {
+        message = {
             "id": 3,
-            "message_text": "Hello",
-            "date_sent": "11/15/2026",
-            "created_at": "2026-11-15T00:00:00",
+            "message": "Hello",
+            "dateSent": "11/15/2026",
+            "createdAt": "2026-11-15T00:00:00",
         }
-        email_row = {
+        email = {
             "id": 4,
             "sender": "visitor@example.com",
-            "subject_line": "Question",
-            "message_text": "Hello there",
-            "date_sent": "11/15/2026",
-            "created_at": "2026-11-15T00:00:00",
+            "subject": "Question",
+            "message": "Hello there",
+            "dateSent": "11/15/2026",
+            "createdAt": "2026-11-15T00:00:00",
         }
         with (
             patch.object(Api, "PROJECTS_ADMIN_TOKEN", "test-token"),
-            patch.object(
-                Api.database,
-                "list_messages",
-                return_value=[
-                    {
-                        "id": message_row["id"],
-                        "message": message_row["message_text"],
-                        "dateSent": message_row["date_sent"],
-                        "createdAt": message_row["created_at"],
-                    }
-                ],
-            ),
-            patch.object(
-                Api.database,
-                "list_emails",
-                return_value=[
-                    {
-                        "id": email_row["id"],
-                        "sender": email_row["sender"],
-                        "subject": email_row["subject_line"],
-                        "message": email_row["message_text"],
-                        "dateSent": email_row["date_sent"],
-                        "createdAt": email_row["created_at"],
-                    }
-                ],
-            ),
+            patch.object(Api.database, "list_messages", return_value=[message]),
+            patch.object(Api.database, "list_emails", return_value=[email]),
             patch.object(Api.database, "delete_message", return_value=True),
             patch.object(Api.database, "delete_email", return_value=True),
         ):

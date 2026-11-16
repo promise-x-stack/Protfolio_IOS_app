@@ -34,9 +34,15 @@ properly managed admin credential.
 ## Backend modules
 
 `Api.py` imports `Modules.database`, which owns MySQL configuration,
-initialization, and all project, message, and email queries. The module creates
-the configured database and tables lazily when the first database operation is
-requested; the data itself remains in the XAMPP-managed MySQL server.
+initialization, and project, message, and email queries. The module creates the
+configured database and tables lazily when the first database operation is
+requested; all data remains in the XAMPP-managed MySQL server.
+
+The module is imported with `from Modules import database`. Its public
+functions include `initialize_database()` and `get_connection()`, plus
+`list_projects()`, `get_project()`, `create_project()`, `update_project()`,
+`delete_project()`, and the corresponding message/email create, list, and
+delete functions.
 
 ## Project API
 

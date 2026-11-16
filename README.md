@@ -9,6 +9,8 @@ the developer page at `/Gui` manages those records.
 - Responsive React/Vite portfolio and project category views.
 - Flask REST API with project create, read, update, and delete operations.
 - XAMPP/MySQL database and project table created automatically on first API use.
+- MySQL configuration, initialization, and query functions are organized in
+  `BackEnd/Modules/database.py`.
 - Browser project-list caching with offline fallback.
 - Token-protected project administration page.
 - Contact messages and emails saved in separate MySQL tables and managed from

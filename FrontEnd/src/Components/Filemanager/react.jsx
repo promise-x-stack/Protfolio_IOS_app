@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 
 
-const Finder = (props) => {
+const Finder = () => {
   // ----- File System Data (mock) -----
-  const fileSystem = [
+  const fileSystem = useMemo(() => [
     { id: "root", name: "Macintosh HD", type: "folder", parentId: null, size: null, modDate: "Today, 10:23 AM" },
     { id: "applications", name: "Applications", type: "folder", parentId: "root", size: null, modDate: "Yesterday" },
     { id: "users", name: "Users", type: "folder", parentId: "root", size: null, modDate: "Yesterday" },
@@ -26,7 +26,7 @@ const Finder = (props) => {
     { id: "finder", name: "Finder.app", type: "file", parentId: "applications", size: "28 MB", modDate: "Mar 20" },
     { id: "song1", name: "song.mp3", type: "file", parentId: "music", size: "7.8 MB", modDate: "Apr 6" },
     { id: "video", name: "clip.mov", type: "file", parentId: "movies", size: "156 MB", modDate: "Apr 4" }
-  ];
+  ], []);
 
   // Navigation state
   const [currentDirectoryId, setCurrentDirectoryId] = useState("users");
@@ -167,24 +167,11 @@ const Finder = (props) => {
   };
 
   // Current folder object
-  const currentFolder = getItemById(currentDirectoryId);
   const pathArray = getPathArray(currentDirectoryId);
   const itemCount = getChildren(currentDirectoryId).length;
 
   return (
     <div className="finder-window">
-      {/* Titlebar */}
-      <div className="titlebar">
-        <div className="traffic-lights">
-          <div className="light close" onClick={props.func}></div>
-          <div className="light minimize"></div>
-          <div className="light zoom"></div>
-        </div>
-        <div className="window-title">
-          <i className="fas fa-smile"></i> Finder
-        </div>
-      </div>
-
       {/* Toolbar */}
       <div className="toolbar">
         <button className="tool-btn" onClick={goBack} disabled={historyStack.length === 0}>
@@ -259,7 +246,7 @@ const Finder = (props) => {
       </div>
 
       {/* Styles (inline) */}
-      <style jsx>{`
+      <style>{`
         .finder-window {
           transform: translatex(0cm) translatey(-1.3cm);
           position: absolute;
@@ -276,32 +263,7 @@ const Finder = (props) => {
           overflow: hidden;
           font-family: -apple-system, 'SF Pro Text', 'SF Pro Display', 'BlinkMacSystemFont', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        .titlebar {
-          background: #fcfcfd;
-          padding: 12px 16px 10px 16px;
-          border-bottom: 1px solid #e2e5e9;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex-shrink: 0;
-        }
-        .traffic-lights { display: flex; gap: 8px; }
-        .light { width: 12px; height: 12px; border-radius: 50%; }
-        .close { background: #ff5f56; cursor: pointer;}
-        .minimize { background: #ffbd2e; }
-        .zoom { background: #27c93f; }
-        .window-title {
-          font-size: 13px;
-          font-weight: 590;
-          color: #1c1e22;
-          background: #f0f2f5;
-          padding: 4px 12px;
-          border-radius: 28px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .toolbar {
+        .finder-window .toolbar {
           background: #ffffff;
           border-bottom: 1px solid #e8ecef;
           padding: 6px 16px;
@@ -310,7 +272,7 @@ const Finder = (props) => {
           gap: 10px;
           flex-shrink: 0;
         }
-        .tool-btn {
+        .finder-window .tool-btn {
           background: transparent;
           border: none;
           padding: 6px 12px;
@@ -324,17 +286,17 @@ const Finder = (props) => {
           cursor: pointer;
           transition: 0.1s;
         }
-        .tool-btn:hover:not(:disabled) { background: #eef2f7; }
-        .tool-btn:disabled { opacity: 0.5; cursor: default; }
-        .toolbar-spacer { flex: 1; }
-        .view-buttons {
+        .finder-window .tool-btn:hover:not(:disabled) { background: #eef2f7; }
+        .finder-window .tool-btn:disabled { opacity: 0.5; cursor: default; }
+        .finder-window .toolbar-spacer { flex: 1; }
+        .finder-window .view-buttons {
           display: flex;
           gap: 4px;
           background: #f0f2f5;
           border-radius: 10px;
           padding: 2px;
         }
-        .view-option {
+        .finder-window .view-option {
           background: transparent;
           border: none;
           padding: 6px 12px;
@@ -343,12 +305,12 @@ const Finder = (props) => {
           font-size: 14px;
           color: #5f6c84;
         }
-        .view-option.active {
+        .finder-window .view-option.active {
           background: white;
           color: #0066cc;
           box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .search-field {
+        .finder-window .search-field {
           background: #f0f2f5;
           border-radius: 24px;
           padding: 5px 14px;
@@ -358,8 +320,8 @@ const Finder = (props) => {
           font-size: 13px;
           color: #8e949e;
         }
-        .main-layout { display: flex; flex: 1; overflow: hidden; }
-        .sidebar {
+        .finder-window .main-layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+        .finder-window .sidebar {
           width: 240px;
           background: #f9fafc;
           border-right: 1px solid #e8ecef;
@@ -369,8 +331,8 @@ const Finder = (props) => {
           flex-direction: column;
           gap: 16px;
         }
-        .sidebar-section { display: flex; flex-direction: column; gap: 6px; }
-        .sidebar-heading {
+        .finder-window .sidebar-section { display: flex; flex-direction: column; gap: 6px; }
+        .finder-window .sidebar-heading {
           font-size: 11px;
           font-weight: 600;
           text-transform: uppercase;
@@ -378,7 +340,7 @@ const Finder = (props) => {
           letter-spacing: 0.5px;
           padding-left: 10px;
         }
-        .sidebar-item {
+        .finder-window .sidebar-item {
           display: flex;
           align-items: center;
           gap: 12px;
@@ -387,10 +349,10 @@ const Finder = (props) => {
           font-size: 13px;
           cursor: pointer;
         }
-        .sidebar-item:hover { background: #edf2f7; }
-        .sidebar-item.active { background: #e1e9f5; color: #0066cc; }
-        .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
-        .path-bar {
+        .finder-window .sidebar-item:hover { background: #edf2f7; }
+        .finder-window .sidebar-item.active { background: #e1e9f5; color: #0066cc; }
+        .finder-window .content-area { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
+        .finder-window .path-bar {
           padding: 10px 20px;
           background: #fefefe;
           border-bottom: 1px solid #eef2f6;
@@ -400,15 +362,15 @@ const Finder = (props) => {
           gap: 8px;
           color: #475569;
         }
-        .path-item { cursor: pointer; }
-        .path-item:hover { text-decoration: underline; color: #0066cc; }
-        .file-grid { flex: 1; overflow-y: auto; padding: 20px; }
-        .grid-view {
+        .finder-window .path-item { cursor: pointer; }
+        .finder-window .path-item:hover { text-decoration: underline; color: #0066cc; }
+        .finder-window .file-grid { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
+        .finder-window .grid-view {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(100px, 120px));
           gap: 20px 16px;
         }
-        .grid-item {
+        .finder-window .grid-item {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -417,17 +379,17 @@ const Finder = (props) => {
           border-radius: 12px;
           cursor: pointer;
         }
-        .grid-item:hover { background: #f0f4fa; }
-        .grid-item.selected { background: #e1e9f5; }
-        .grid-name {
+        .finder-window .grid-item:hover { background: #f0f4fa; }
+        .finder-window .grid-item.selected { background: #e1e9f5; }
+        .finder-window .grid-name {
           font-size: 12px;
           font-weight: 470;
           word-break: break-word;
           max-width: 100%;
           color: #1e2a3e;
         }
-        .list-view { display: flex; flex-direction: column; width: 100%; }
-        .list-header {
+        .finder-window .list-view { display: flex; flex-direction: column; width: 100%; }
+        .finder-window .list-header {
           display: grid;
           grid-template-columns: 40px 3fr 1.5fr 1.2fr;
           padding: 10px 16px;
@@ -439,7 +401,7 @@ const Finder = (props) => {
           position: sticky;
           top: 0;
         }
-        .list-row {
+        .finder-window .list-row {
           display: grid;
           grid-template-columns: 40px 3fr 1.5fr 1.2fr;
           padding: 12px 16px;
@@ -447,12 +409,12 @@ const Finder = (props) => {
           border-bottom: 1px solid #f0f4f9;
           cursor: pointer;
         }
-        .list-row:hover { background: #f8fafd; }
-        .list-row.selected { background: #eef3fc; }
-        .list-icon { font-size: 20px; text-align: center; }
-        .list-name { font-weight: 500; font-size: 13px; }
-        .list-date, .list-size { font-size: 12px; color: #6c7a91; }
-        .empty-folder {
+        .finder-window .list-row:hover { background: #f8fafd; }
+        .finder-window .list-row.selected { background: #eef3fc; }
+        .finder-window .list-icon { font-size: 20px; text-align: center; }
+        .finder-window .list-name { font-weight: 500; font-size: 13px; }
+        .finder-window .list-date, .finder-window .list-size { font-size: 12px; color: #6c7a91; }
+        .finder-window .empty-folder {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -461,7 +423,7 @@ const Finder = (props) => {
           color: #9aa3b5;
           gap: 12px;
         }
-        .footer-status {
+        .finder-window .footer-status {
           padding: 6px 16px;
           font-size: 11px;
           color: #8c9bb0;
@@ -470,9 +432,9 @@ const Finder = (props) => {
           display: flex;
           justify-content: space-between;
         }
-        ::-webkit-scrollbar { width: 7px; height: 7px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
+        .finder-window ::-webkit-scrollbar { width: 7px; height: 7px; }
+        .finder-window ::-webkit-scrollbar-track { background: transparent; }
+        .finder-window ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
       `}</style>
     </div>
   );

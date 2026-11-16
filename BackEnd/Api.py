@@ -11,7 +11,6 @@ app = Flask(__name__)
 CORS(app)
 
 PROJECTS_ADMIN_TOKEN = os.getenv("PROJECTS_ADMIN_TOKEN", "")
-PROJECT_COLUMNS = database.PROJECT_COLUMNS
 REQUIRED_PROJECT_FIELDS = ("projectName", "category", "link")
 CATEGORY_NAMES = {
     "entertainment": "entertainment",
@@ -25,7 +24,7 @@ def _read_project_payload(payload, partial=False):
     if not isinstance(payload, dict):
         return None, "A JSON object is required"
 
-    unknown_fields = set(payload) - set(PROJECT_COLUMNS)
+    unknown_fields = set(payload) - set(database.PROJECT_COLUMNS)
     if unknown_fields:
         return None, "Unknown project field: " + ", ".join(sorted(unknown_fields))
 
@@ -77,7 +76,7 @@ def _admin_authorized():
 
 
 def _database_error(error):
-    app.logger.error("Project database operation failed: %s", error, exc_info=True)
+    app.logger.error("Database operation failed: %s", error, exc_info=True)
     return jsonify({"error": "The project database is unavailable"}), 503
 
 
@@ -128,8 +127,7 @@ def project(project_id):
 
     if request.method == "DELETE":
         try:
-            deleted = database.delete_project(project_id)
-            if not deleted:
+            if not database.delete_project(project_id):
                 return jsonify({"error": "Project not found"}), 404
             return "", 204
         except database.DatabaseError as error:
@@ -142,12 +140,14 @@ def project(project_id):
         return jsonify({"error": error}), 400
 
     try:
-        updated = database.update_project(
-            project_id, payload, partial=request.method == "PATCH"
+        result = database.update_project(
+            project_id,
+            payload,
+            partial=request.method == "PATCH",
         )
-        if updated is None:
+        if result is None:
             return jsonify({"error": "Project not found"}), 404
-        return jsonify(updated), 200
+        return jsonify(result), 200
     except database.DatabaseError as error:
         return _database_error(error)
 
@@ -263,8 +263,7 @@ def delete_message(message_id):
     if not authorized:
         return response
     try:
-        deleted = database.delete_message(message_id)
-        if not deleted:
+        if not database.delete_message(message_id):
             return jsonify({"error": "Message not found"}), 404
         return "", 204
     except database.DatabaseError as error:
@@ -288,8 +287,7 @@ def delete_email(email_id):
     if not authorized:
         return response
     try:
-        deleted = database.delete_email(email_id)
-        if not deleted:
+        if not database.delete_email(email_id):
             return jsonify({"error": "Email not found"}), 404
         return "", 204
     except database.DatabaseError as error:
@@ -302,4 +300,4 @@ def Gui():
 
 
 if __name__ == "__main__":
-    app.run(debug=os.getenv("FLASK_DEBUG", "true").lower() == "true")
+    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")

@@ -9,7 +9,11 @@ function ProjectList({ category, title }) {
 
   useEffect(() => {
     let active = true;
-    fetchProjects(category)
+    fetchProjects(category, {
+      onUpdate: (updatedProjects) => {
+        if (active) setProjects(updatedProjects);
+      },
+    })
       .then((data) => {
         if (active) setProjects(data);
       })
