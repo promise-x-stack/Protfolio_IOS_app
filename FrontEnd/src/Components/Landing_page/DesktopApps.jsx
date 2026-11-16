@@ -55,6 +55,7 @@ export function BrowserApp() {
       setAddress(url.href);
       setPageUrl(url.href);
       setNavigationError("");
+      window.open(url.href, "_blank", "noopener,noreferrer");
     } catch {
       setNavigationError("Enter a valid website address.");
     }
@@ -83,7 +84,7 @@ export function BrowserApp() {
       {navigationError && <p className="browser-navigation-error" role="alert">{navigationError}</p>}
       <iframe className="browser-frame" src={pageUrl} title="Safari web page" referrerPolicy="no-referrer" />
       <div className="browser-frame-fallback">
-        If this page does not load here, <a href={repositoryUrl} target="_blank" rel="noreferrer">open the repository in a new tab</a>.
+        Some websites block embedded viewing. <a href={pageUrl} target="_blank" rel="noreferrer">Open this page in a new tab</a>.
       </div>
     </section>
   );

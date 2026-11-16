@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import gsap from "gsap";
 import AppleMail from "../AppleMail/AppleMail";
 import Finder from "../Filemanager/react";
 import AppleAppStore from "../Applestore/AppleAppStore";
@@ -8,6 +9,7 @@ import {
   BrowserApp,
   SettingsApp,
 } from "./DesktopApps";
+import PowerOnAnimation from "./PowerOnAnimation";
 import "./Landing.css";
 
 import aboutIcon from "../../assets/about_icon.jpg";
@@ -31,6 +33,26 @@ const APPLICATIONS = [
   { id: "settings", label: "Settings", icon: settingsIcon },
 ];
 
+const MOBILE_APPLICATIONS = APPLICATIONS.filter((app) => app.id !== "finder" && app.id !== "trash");
+const DESKTOP_APPLICATIONS = APPLICATIONS.filter((app) => app.id !== "messages");
+const SOCIAL_LINKS = [
+  {
+    label: "Facebook",
+    href: "https://www.facebook.com/people/Promise-Mukunya/pfbid0t6k2yHpQKcDhDT3xjNtW2Bv45YHoxReHALRwBnqmwRBcLAhznS6ynHnqtUofRjsEl/#",
+    icon: "fab fa-facebook-f",
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/promisemukunya/",
+    icon: "fab fa-instagram",
+  },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/promise-mukunya-0aa333367/",
+    icon: "fab fa-linkedin-in",
+  },
+];
+
 const WINDOW_TITLES = {
   finder: "Finder",
   trash: "Trash",
@@ -52,6 +74,57 @@ function getClock() {
   }).format(new Date());
 }
 
+function createGsapHoverHandlers(lift, scale) {
+  function animate(target, active) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const isDesktopDockIcon = target.closest(".mac-dock");
+    gsap.to(target, {
+      y: active ? -(isDesktopDockIcon ? 5 : lift) : 0,
+      scale: active ? (isDesktopDockIcon ? 1.08 : scale) : 1,
+      duration: active ? 0.2 : 0.24,
+      ease: active ? "power2.out" : "power1.out",
+      overwrite: "auto",
+    });
+  }
+
+  function press(target, active) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    gsap.to(target, {
+      scale: active ? 0.97 : 1,
+      duration: active ? 0.12 : 0.18,
+      ease: active ? "power1.out" : "power2.out",
+      overwrite: "auto",
+    });
+  }
+
+  return {
+    onPointerEnter: (event) => {
+      if (event.pointerType !== "touch") animate(event.currentTarget, true);
+    },
+    onPointerLeave: (event) => {
+      if (event.pointerType !== "touch") animate(event.currentTarget, false);
+    },
+    onPointerDown: (event) => {
+      if (event.pointerType === "touch") press(event.currentTarget, true);
+    },
+    onPointerUp: (event) => {
+      if (event.pointerType === "touch") press(event.currentTarget, false);
+    },
+    onPointerCancel: (event) => {
+      if (event.pointerType === "touch") press(event.currentTarget, false);
+    },
+    onFocus: (event) => animate(event.currentTarget, true),
+    onBlur: (event) => animate(event.currentTarget, false),
+  };
+}
+
+const appIconHoverHandlers = createGsapHoverHandlers(3, 1.04);
+const socialHoverHandlers = createGsapHoverHandlers(2, 1.06);
+const controlHoverHandlers = createGsapHoverHandlers(1, 1.025);
+const trashHoverHandlers = createGsapHoverHandlers(5, 1.08);
+
 function AppIcon({ app, onOpen, compact = false }) {
   return (
     <button
@@ -60,12 +133,33 @@ function AppIcon({ app, onOpen, compact = false }) {
       onClick={() => onOpen(app.id)}
       aria-label={`Open ${app.label}`}
       title={app.label}
+      {...appIconHoverHandlers}
     >
       <span className="home-app-image">
         <img src={app.icon} alt="" draggable="false" />
       </span>
       <span className="home-app-label">{app.label}</span>
     </button>
+  );
+}
+
+function SocialLinks({ mobile = false }) {
+  return (
+    <nav className={`social-links ${mobile ? "social-links-mobile" : ""}`} aria-label="Social profiles">
+      {SOCIAL_LINKS.map((link) => (
+        <a
+          key={link.label}
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={link.label}
+          title={link.label}
+          {...socialHoverHandlers}
+        >
+          <i className={link.icon} aria-hidden="true" />
+        </a>
+      ))}
+    </nav>
   );
 }
 
@@ -105,6 +199,7 @@ function ApplicationContent({ app, onOpen, appearance, onToggleAppearance }) {
 }
 
 function LandingPage() {
+  const [booting, setBooting] = useState(true);
   const [activeApp, setActiveApp] = useState(null);
   const [minimizedApps, setMinimizedApps] = useState([]);
   const [maximized, setMaximized] = useState(false);
@@ -119,6 +214,8 @@ function LandingPage() {
       return "dark";
     }
   });
+
+  const finishBoot = useCallback(() => setBooting(false), []);
 
   const openApp = useCallback((app) => {
     if (!app) {
@@ -169,7 +266,7 @@ function LandingPage() {
 
   const matchingApps = useMemo(() => {
     const query = spotlightQuery.trim().toLowerCase();
-    return APPLICATIONS.filter((app) => !query || app.label.toLowerCase().includes(query));
+    return DESKTOP_APPLICATIONS.filter((app) => !query || app.label.toLowerCase().includes(query));
   }, [spotlightQuery]);
 
   function minimizeApp() {
@@ -188,6 +285,25 @@ function LandingPage() {
         "--mobile-wallpaper": `url("${mobileWallpaper}")`,
       }}
     >
+      <svg className="liquid-glass-defs" aria-hidden="true" focusable="false">
+        <filter id="liquid-glass-filter" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.012 0.018"
+            numOctaves="2"
+            seed="7"
+            result="glass-noise"
+          />
+          <feGaussianBlur in="glass-noise" stdDeviation="2" result="soft-glass-noise" />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="soft-glass-noise"
+            scale="16"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </svg>
       <div className="desktop-menu-bar">
         <div className="menu-left">
           <button
@@ -233,7 +349,7 @@ function LandingPage() {
 
       <section className="desktop-workspace" aria-label="Portfolio desktop">
         <div className="desktop-icon-column" aria-label="Desktop apps">
-          {APPLICATIONS.slice(0, 5).map((app) => (
+          {DESKTOP_APPLICATIONS.slice(0, 5).map((app) => (
             <AppIcon key={app.id} app={app} onOpen={openApp} />
           ))}
         </div>
@@ -246,13 +362,14 @@ function LandingPage() {
             Take a look around.
           </p>
           <div className="welcome-actions">
-            <button type="button" className="welcome-primary" onClick={() => openApp("projects")}>
+            <button type="button" className="welcome-primary" onClick={() => openApp("projects")} {...controlHoverHandlers}>
               <i className="fas fa-folder-open" aria-hidden="true" /> Explore my work
             </button>
-            <button type="button" className="welcome-secondary" onClick={() => openApp("about")}>
+            <button type="button" className="welcome-secondary" onClick={() => openApp("about")} {...controlHoverHandlers}>
               About me <i className="fas fa-arrow-right" aria-hidden="true" />
             </button>
           </div>
+          <SocialLinks />
           <div className="desktop-widget">
             <div className="widget-icon"><i className="fas fa-code" aria-hidden="true" /></div>
             <div>
@@ -276,12 +393,6 @@ function LandingPage() {
       </section>
 
       <section className="ios-home-screen" aria-label="iPhone home screen">
-        <div className="ios-status-bar">
-          <span>{new Intl.DateTimeFormat([], { hour: "numeric", minute: "2-digit" }).format(new Date())}</span>
-          <span className="ios-island" aria-hidden="true" />
-          <span className="ios-status-icons"><i className="fas fa-signal" /><i className="fas fa-wifi" /><i className="fas fa-battery-three-quarters" /></span>
-        </div>
-
         <div className="ios-date">
           <span>{new Intl.DateTimeFormat([], { weekday: "long" }).format(new Date())}</span>
           <strong>{new Intl.DateTimeFormat([], { month: "long", day: "numeric" }).format(new Date())}</strong>
@@ -291,20 +402,21 @@ function LandingPage() {
           <span className="ios-widget-kicker">PORTFOLIO · 2026</span>
           <h1>Promise<br />Ndegwa</h1>
           <p>Developer · Designer · Creator</p>
-          <button type="button" onClick={() => openApp("about")}>
+          <button type="button" onClick={() => openApp("about")} {...controlHoverHandlers}>
             Discover my story <i className="fas fa-arrow-right" aria-hidden="true" />
           </button>
+          <SocialLinks mobile />
           <span className="ios-widget-orb" aria-hidden="true" />
         </section>
 
         <div className="ios-app-grid">
-          {APPLICATIONS.map((app) => (
+          {MOBILE_APPLICATIONS.map((app) => (
             <AppIcon key={app.id} app={app} onOpen={openApp} compact />
           ))}
         </div>
 
         <div className="ios-dock" aria-label="Favorite apps">
-          {APPLICATIONS.filter((app) => ["finder", "projects", "mail", "messages"].includes(app.id)).map((app) => (
+          {MOBILE_APPLICATIONS.filter((app) => ["projects", "mail", "messages"].includes(app.id)).map((app) => (
             <AppIcon key={app.id} app={app} onOpen={openApp} compact />
           ))}
         </div>
@@ -312,11 +424,11 @@ function LandingPage() {
       </section>
 
       <nav className="mac-dock" aria-label="Dock">
-        {APPLICATIONS.filter((app) => ["finder", "projects", "mail", "messages", "safari", "settings"].includes(app.id)).map((app) => (
+        {DESKTOP_APPLICATIONS.filter((app) => ["finder", "projects", "mail", "safari", "settings"].includes(app.id)).map((app) => (
           <AppIcon key={app.id} app={app} onOpen={openApp} compact />
         ))}
         <span className="dock-divider" />
-        <button className="dock-trash" type="button" onClick={() => openApp("trash")} aria-label="Open Trash">
+        <button className="dock-trash" type="button" onClick={() => openApp("trash")} aria-label="Open Trash" {...trashHoverHandlers}>
           <img src={trashIcon} alt="" />
         </button>
       </nav>
@@ -385,6 +497,7 @@ function LandingPage() {
           </section>
         </div>
       )}
+      {booting && <PowerOnAnimation onComplete={finishBoot} />}
     </main>
   );
 }

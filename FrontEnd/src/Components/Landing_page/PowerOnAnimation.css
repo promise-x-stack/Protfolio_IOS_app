@@ -1,0 +1,152 @@
+.boot-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(35, 54, 83, 0.5), transparent 52%),
+    #05070b;
+  perspective: 1400px;
+}
+
+.boot-macbook {
+  display: flex;
+  width: min(660px, 78vw);
+  flex-direction: column;
+  align-items: center;
+  transform-style: preserve-3d;
+}
+
+.boot-macbook-lid {
+  width: 83%;
+  padding: 11px 11px 9px;
+  border: 1px solid #444851;
+  border-radius: 20px 20px 8px 8px;
+  background: linear-gradient(145deg, #34373e, #17191e 70%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.7), 0 28px 75px rgba(0, 0, 0, 0.55);
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+}
+
+.boot-macbook-lid .boot-screen {
+  aspect-ratio: 16 / 10;
+  border-radius: 10px;
+}
+
+.boot-macbook-base {
+  position: relative;
+  width: 100%;
+  height: 17px;
+  margin-top: -1px;
+  border: 1px solid #aeb3bd;
+  border-radius: 2px 2px 14px 14px;
+  background: linear-gradient(180deg, #c8cbd1, #747984 72%, #42464e);
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+}
+
+.boot-trackpad {
+  position: absolute;
+  top: 1px;
+  left: 50%;
+  width: 19%;
+  height: 7px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(45, 49, 56, 0.25);
+  border-radius: 0 0 5px 5px;
+  background: rgba(224, 227, 232, 0.28);
+}
+
+.boot-ios-device {
+  position: relative;
+  display: none;
+  width: min(278px, 72vw);
+  height: min(560px, 76vh);
+  min-height: 400px;
+  padding: 9px;
+  border: 2px solid #4a4e57;
+  border-radius: 46px;
+  background: linear-gradient(140deg, #252830, #090a0d 38%, #30343c);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.boot-ios-device .boot-screen {
+  height: 100%;
+  border-radius: 36px;
+}
+
+.boot-ios-island {
+  position: absolute;
+  z-index: 1;
+  top: 17px;
+  left: 50%;
+  width: 82px;
+  height: 23px;
+  transform: translateX(-50%);
+  border-radius: 15px;
+  background: #020203;
+}
+
+.boot-screen {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #030405;
+  color: #fff;
+}
+
+.boot-logo {
+  font-size: 55px;
+  text-shadow: 0 0 30px rgba(199, 222, 255, 0.45);
+}
+
+.boot-label {
+  margin-top: 21px;
+  color: rgba(242, 246, 255, 0.78);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.boot-progress {
+  display: block;
+  width: 112px;
+  height: 3px;
+  overflow: hidden;
+  margin-top: 12px;
+  border-radius: 3px;
+  background: rgba(228, 236, 250, 0.28);
+}
+
+.boot-progress-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  border-radius: inherit;
+  background: #f5f8ff;
+}
+
+@media (max-width: 800px) {
+  .boot-macbook {
+    display: none;
+  }
+
+  .boot-ios-device {
+    display: block;
+  }
+
+  .boot-ios-device .boot-screen {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-overlay {
+    display: none;
+  }
+}
