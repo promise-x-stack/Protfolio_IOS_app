@@ -1,6 +1,5 @@
 import { useState } from "react";
 import PopUp from "./Notification";
-import MassageNav from "./massageNav";
 import Chatbox from "./Chatbox";
 import InputText from "./InputText";
 import "./massage.css"
@@ -55,7 +54,6 @@ function MassagePage({ embedded = false }){
         <>
             <section id="mobileMassage" className={`msgp ${embedded ? "msgp-embedded" : ""}`}>
                 <div className="container">
-                    <MassageNav backicon={<i className="fas fa-chevron-left"></i>} usericon="👩🏼‍🦰" homeicon={<i className="fas fa-house"></i>}/>
                     <Chatbox usertext={Text}/>
                     <InputText func={Sendmsg} icon={<i className="fas fa-paper-plane"></i>}/>
                     <p className="message-api-status" role="status" aria-live="polite">{sendStatus}</p>

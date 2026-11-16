@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 const skills = ["React", "JavaScript", "HTML & CSS", "Flask", "MySQL", "Responsive UI"];
+const repositoryUrl = "https://github.com/promise-x-stack/Protfolio_IOS_app.git";
+const repositoryPageUrl = "https://github.com/promise-x-stack/Protfolio_IOS_app";
 
 export function AboutApp({ onOpen }) {
   return (
@@ -23,7 +25,7 @@ export function AboutApp({ onOpen }) {
         {skills.map((skill) => <span key={skill}>{skill}</span>)}
       </div>
       <div className="about-links">
-        <a href="https://github.com/Promise254" target="_blank" rel="noreferrer">
+        <a href={repositoryUrl} target="_blank" rel="noreferrer">
           <i className="fab fa-github" aria-hidden="true" /> GitHub
         </a>
         <button type="button" onClick={() => onOpen("projects")}>
@@ -34,25 +36,40 @@ export function AboutApp({ onOpen }) {
   );
 }
 
-export function BrowserApp({ onOpen }) {
-  const [address, setAddress] = useState("github.com/Promise254");
-  const [page, setPage] = useState("profile");
+export function BrowserApp() {
+  const [address, setAddress] = useState(repositoryPageUrl);
+  const [pageUrl, setPageUrl] = useState(repositoryPageUrl);
+  const [navigationError, setNavigationError] = useState("");
 
   function navigate(event) {
     event.preventDefault();
     const value = address.trim();
-    if (value.toLowerCase().includes("github")) {
-      setPage("profile");
-      setAddress("github.com/Promise254");
-    } else {
-      setPage("home");
+    const candidate = /^[a-z][a-z\d+.-]*:\/\//i.test(value) ? value : `https://${value}`;
+
+    try {
+      const url = new URL(candidate);
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        setNavigationError("Only HTTP and HTTPS addresses are supported.");
+        return;
+      }
+      setAddress(url.href);
+      setPageUrl(url.href);
+      setNavigationError("");
+    } catch {
+      setNavigationError("Enter a valid website address.");
     }
+  }
+
+  function goHome() {
+    setAddress(repositoryPageUrl);
+    setPageUrl(repositoryPageUrl);
+    setNavigationError("");
   }
 
   return (
     <section className="browser-app">
       <form className="browser-toolbar" onSubmit={navigate}>
-        <button type="button" aria-label="Back" onClick={() => setPage("home")}>
+        <button type="button" aria-label="Back to repository" onClick={goHome}>
           <i className="fas fa-chevron-left" aria-hidden="true" />
         </button>
         <label>
@@ -63,24 +80,11 @@ export function BrowserApp({ onOpen }) {
           </button>
         </label>
       </form>
-      {page === "profile" ? (
-        <div className="browser-profile">
-          <div className="browser-profile-icon"><i className="fab fa-github" aria-hidden="true" /></div>
-          <p>DEVELOPER PROFILE</p>
-          <h1>Promise Ndegwa</h1>
-          <span>Explore source code and projects on GitHub.</span>
-          <a href="https://github.com/Promise254" target="_blank" rel="noreferrer">
-            Visit GitHub <i className="fas fa-arrow-up-right-from-square" aria-hidden="true" />
-          </a>
-        </div>
-      ) : (
-        <div className="browser-start">
-          <div className="browser-compass"><i className="fas fa-compass" aria-hidden="true" /></div>
-          <h1>Where to next?</h1>
-          <p>This browser is a small tour of Promise’s portfolio.</p>
-          <button type="button" onClick={() => onOpen("projects")}>Browse projects</button>
-        </div>
-      )}
+      {navigationError && <p className="browser-navigation-error" role="alert">{navigationError}</p>}
+      <iframe className="browser-frame" src={pageUrl} title="Safari web page" referrerPolicy="no-referrer" />
+      <div className="browser-frame-fallback">
+        If this page does not load here, <a href={repositoryUrl} target="_blank" rel="noreferrer">open the repository in a new tab</a>.
+      </div>
     </section>
   );
 }

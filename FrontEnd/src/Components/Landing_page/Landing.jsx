@@ -13,7 +13,6 @@ import "./Landing.css";
 import aboutIcon from "../../assets/about_icon.jpg";
 import appStoreIcon from "../../assets/appstore_icon.jpg";
 import browserIcon from "../../assets/browser_icon.jpg";
-import fileIcon from "../../assets/file_icon.webp";
 import mailIcon from "../../assets/message_icon.jpg";
 import macIcon from "../../assets/macos_logo.webp";
 import messagesIcon from "../../assets/message.jpg";
@@ -34,6 +33,7 @@ const APPLICATIONS = [
 
 const WINDOW_TITLES = {
   finder: "Finder",
+  trash: "Trash",
   about: "About Promise",
   projects: "Projects",
   mail: "Mail",
@@ -84,7 +84,9 @@ function TrafficLight({ color, label, onClick }) {
 function ApplicationContent({ app, onOpen, appearance, onToggleAppearance }) {
   switch (app) {
     case "finder":
-      return <Finder />;
+      return <Finder key="finder" />;
+    case "trash":
+      return <Finder key="trash" initialDirectory="trash" />;
     case "about":
       return <AboutApp onOpen={onOpen} />;
     case "projects":
@@ -94,7 +96,7 @@ function ApplicationContent({ app, onOpen, appearance, onToggleAppearance }) {
     case "messages":
       return <MessagePage embedded />;
     case "safari":
-      return <BrowserApp onOpen={onOpen} />;
+      return <BrowserApp />;
     case "settings":
       return <SettingsApp appearance={appearance} onToggleAppearance={onToggleAppearance} />;
     default:
@@ -261,11 +263,6 @@ function LandingPage() {
           </div>
         </section>
 
-        <div className="desktop-trash">
-          <img src={trashIcon} alt="" />
-          <span>Trash</span>
-        </div>
-
         {minimizedApps.length > 0 && (
           <div className="minimized-windows" aria-label="Minimized windows">
             {minimizedApps.map((app) => (
@@ -319,8 +316,8 @@ function LandingPage() {
           <AppIcon key={app.id} app={app} onOpen={openApp} compact />
         ))}
         <span className="dock-divider" />
-        <button className="dock-trash" type="button" onClick={() => openApp("finder")} aria-label="Open Finder">
-          <img src={fileIcon} alt="" />
+        <button className="dock-trash" type="button" onClick={() => openApp("trash")} aria-label="Open Trash">
+          <img src={trashIcon} alt="" />
         </button>
       </nav>
 

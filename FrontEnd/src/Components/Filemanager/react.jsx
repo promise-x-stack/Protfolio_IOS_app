@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
 
-const Finder = () => {
+const Finder = ({ initialDirectory = "users" }) => {
   // ----- File System Data (mock) -----
   const fileSystem = useMemo(() => [
     { id: "root", name: "Macintosh HD", type: "folder", parentId: null, size: null, modDate: "Today, 10:23 AM" },
     { id: "applications", name: "Applications", type: "folder", parentId: "root", size: null, modDate: "Yesterday" },
     { id: "users", name: "Users", type: "folder", parentId: "root", size: null, modDate: "Yesterday" },
     { id: "system", name: "System", type: "folder", parentId: "root", size: null, modDate: "Apr 10" },
+    { id: "trash", name: "Trash", type: "folder", parentId: "root", size: null, modDate: "Today" },
     { id: "downloads", name: "Downloads", type: "folder", parentId: "users", size: null, modDate: "Today" },
     { id: "desktop", name: "Desktop", type: "folder", parentId: "users", size: null, modDate: "Today" },
     { id: "documents", name: "Documents", type: "folder", parentId: "users", size: null, modDate: "Yesterday" },
@@ -29,7 +30,7 @@ const Finder = () => {
   ], []);
 
   // Navigation state
-  const [currentDirectoryId, setCurrentDirectoryId] = useState("users");
+  const [currentDirectoryId, setCurrentDirectoryId] = useState(initialDirectory);
   const [historyStack, setHistoryStack] = useState([]);
   const [forwardStack, setForwardStack] = useState([]);
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
@@ -96,6 +97,7 @@ const Finder = () => {
     { id: "desktop", icon: "fas fa-desktop", label: "Desktop" },
     { id: "documents", icon: "fas fa-folder-open", label: "Documents" },
     { id: "downloads", icon: "fas fa-download", label: "Downloads" },
+    { id: "trash", icon: "fas fa-trash-alt", label: "Trash" },
     { id: "root", icon: "fas fa-hdd", label: "Macintosh HD", isDevice: true }
   ];
 

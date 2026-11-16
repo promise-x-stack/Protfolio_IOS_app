@@ -18,7 +18,7 @@ const inboxMessages = [
     address: "promise0X@gmail.com",
     subject: "Website Project",
     date: "Thu, 9:30 AM",
-    text: "Check out this new project before it is unpublished: https://github.com/Promise254",
+    text: "Check out this new project before it is unpublished: https://github.com/promise-x-stack/Protfolio_IOS_app.git",
     recipient: "user@macbook.com",
   },
 ];
@@ -94,12 +94,6 @@ function AppleMail() {
     <div className="mail-app">
       <div className="mail-container">
         <header className="mail-header">
-          <div className="mail-window-lights" aria-hidden="true">
-            <span className="mail-dot mail-dot-red" />
-            <span className="mail-dot mail-dot-yellow" />
-            <span className="mail-dot mail-dot-green" />
-          </div>
-          <strong className="mail-window-title">Mail</strong>
           <button
             className="mail-compose-button"
             type="button"
