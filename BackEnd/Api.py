@@ -1,16 +1,20 @@
 import hmac
 import os
+from pathlib import Path
 from datetime import datetime, timezone
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
+
+load_dotenv(Path(__file__).with_name(".env"))
 
 from Modules import database
 
 app = Flask(__name__)
 CORS(app)
 
-PROJECTS_ADMIN_TOKEN = os.getenv("PROJECTS_ADMIN_TOKEN", "")
+PROJECTS_ADMIN_TOKEN = os.getenv("PROJECTS_ADMIN_TOKEN", "f2520635350dc35cd20c623450f4a5ab6ee21ee77b75b2dfd4fd6fb7ddb170ca")
 REQUIRED_PROJECT_FIELDS = ("projectName", "category", "link")
 CATEGORY_NAMES = {
     "entertainment": "entertainment",
@@ -70,7 +74,9 @@ def _admin_authorized():
         supplied_token = supplied_token[7:]
     else:
         supplied_token = ""
-    if not hmac.compare_digest(supplied_token, PROJECTS_ADMIN_TOKEN):
+    if not hmac.compare_digest(
+        supplied_token.encode("utf-8"), PROJECTS_ADMIN_TOKEN.encode("utf-8")
+    ):
         return False, (jsonify({"error": "A valid admin bearer token is required"}), 401)
     return True, None
 

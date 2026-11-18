@@ -5,16 +5,12 @@
 1. Start **MySQL** in the XAMPP Control Panel. The API creates the configured
    database and its `projects`, `messages`, and `emails` tables on the first
    database request.
-2. In PowerShell, from `BackEnd`, set the MySQL settings if they differ from the
-   XAMPP defaults:
+2. In PowerShell, from `BackEnd`, create a local environment file from the
+   example and edit it with your MySQL settings and a long random admin token:
 
    ```powershell
-   $env:MYSQL_HOST = "127.0.0.1"
-   $env:MYSQL_PORT = "3306"
-   $env:MYSQL_USER = "root"
-   $env:MYSQL_PASSWORD = ""
-   $env:MYSQL_DATABASE = "portfolio_db"
-   $env:PROJECTS_ADMIN_TOKEN = "replace-with-a-long-random-secret"
+   Copy-Item .env.example .env
+   notepad .env
    ```
 
 3. Install dependencies and run the API:
@@ -23,6 +19,9 @@
    py -m pip install -r requirements.txt
    py Api.py
    ```
+
+`Api.py` loads `BackEnd/.env` on startup. The real `.env` file is ignored by
+Git; do not commit it or put its admin token in the frontend.
 
 The public portfolio can read projects without a token. Create, update, and
 delete requests require `Authorization: Bearer <PROJECTS_ADMIN_TOKEN>`.

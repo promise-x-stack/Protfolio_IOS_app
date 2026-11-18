@@ -23,6 +23,40 @@ class ProjectApiTests(unittest.TestCase):
             response = self.client.post("/api/products", json=payload)
         self.assertEqual(response.status_code, 401)
 
+    def test_admin_token_supports_non_ascii_characters(self):
+        message = {
+            "id": 3,
+            "message": "Hello",
+            "dateSent": "11/15/2026",
+            "createdAt": "2026-11-15T00:00:00",
+        }
+        email = {
+            "id": 4,
+            "sender": "visitor@example.com",
+            "subject": "Question",
+            "message": "Hello there",
+            "dateSent": "11/15/2026",
+            "createdAt": "2026-11-15T00:00:00",
+        }
+        with (
+            patch.object(Api, "PROJECTS_ADMIN_TOKEN", "token-£"),
+            patch.object(Api.database, "list_messages", return_value=[message]),
+            patch.object(Api.database, "list_emails", return_value=[email]),
+        ):
+            messages = self.client.get(
+                "/api/messages",
+                headers={"Authorization": "Bearer token-£"},
+            )
+            emails = self.client.get(
+                "/api/emails",
+                headers={"Authorization": "Bearer token-£"},
+            )
+
+        self.assertEqual(messages.status_code, 200)
+        self.assertEqual(messages.get_json()[0]["message"], "Hello")
+        self.assertEqual(emails.status_code, 200)
+        self.assertEqual(emails.get_json()[0]["sender"], "visitor@example.com")
+
     def test_create_and_list_projects(self):
         project = {
             "id": 7,
