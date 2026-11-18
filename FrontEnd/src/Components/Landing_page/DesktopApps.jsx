@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const skills = ["React", "JavaScript", "HTML & CSS", "Flask", "MySQL", "Responsive UI"];
 const repositoryUrl = "https://github.com/promise-x-stack/Protfolio_IOS_app.git";
-const repositoryPageUrl = "https://github.com/promise-x-stack/Protfolio_IOS_app";
+const browserHomeUrl = "https://www.google.com/webhp?igu=1";
 
 export function AboutApp({ onOpen }) {
   return (
@@ -37,14 +37,18 @@ export function AboutApp({ onOpen }) {
 }
 
 export function BrowserApp() {
-  const [address, setAddress] = useState(repositoryPageUrl);
-  const [pageUrl, setPageUrl] = useState(repositoryPageUrl);
+  const [address, setAddress] = useState(browserHomeUrl);
+  const [pageUrl, setPageUrl] = useState(browserHomeUrl);
   const [navigationError, setNavigationError] = useState("");
 
   function navigate(event) {
     event.preventDefault();
     const value = address.trim();
-    const candidate = /^[a-z][a-z\d+.-]*:\/\//i.test(value) ? value : `https://${value}`;
+    const hasProtocol = /^[a-z][a-z\d+.-]*:\/\//i.test(value);
+    const isWebAddress = hasProtocol || (/^[\w-]+(?:\.[\w-]+)+(?:[/?#:]|$)/i.test(value));
+    const candidate = isWebAddress
+      ? (hasProtocol ? value : `https://${value}`)
+      : `https://www.google.com/search?igu=1&q=${encodeURIComponent(value)}`;
 
     try {
       const url = new URL(candidate);
@@ -55,15 +59,14 @@ export function BrowserApp() {
       setAddress(url.href);
       setPageUrl(url.href);
       setNavigationError("");
-      window.open(url.href, "_blank", "noopener,noreferrer");
     } catch {
       setNavigationError("Enter a valid website address.");
     }
   }
 
   function goHome() {
-    setAddress(repositoryPageUrl);
-    setPageUrl(repositoryPageUrl);
+    setAddress(browserHomeUrl);
+    setPageUrl(browserHomeUrl);
     setNavigationError("");
   }
 

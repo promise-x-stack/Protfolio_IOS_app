@@ -524,6 +524,7 @@
 }
 
 .app-content-finder,
+.app-content-trash,
 .app-content-projects,
 .app-content-mail,
 .app-content-messages {
@@ -1202,6 +1203,7 @@
   }
 
   .app-content-finder,
+  .app-content-trash,
   .app-content-projects,
   .app-content-mail,
   .app-content-messages {
@@ -1387,7 +1389,8 @@
   color: #647084;
 }
 
-.app-content-finder .finder-window {
+.app-content-finder .finder-window,
+.app-content-trash .finder-window {
   position: relative !important;
   width: 100% !important;
   max-width: none !important;
@@ -1398,11 +1401,13 @@
   box-shadow: none !important;
 }
 
-.app-content-finder .main-layout {
+.app-content-finder .main-layout,
+.app-content-trash .main-layout {
   min-height: 0;
 }
 
-.app-content-finder .sidebar {
+.app-content-finder .sidebar,
+.app-content-trash .sidebar {
   flex: 0 0 200px;
 }
 
@@ -1459,44 +1464,70 @@
     padding: 12px 9px;
   }
 
-  .app-content-finder .sidebar {
+  .app-content-finder .sidebar,
+  .app-content-trash .sidebar {
     flex-basis: 130px;
   }
 
 }
 
 @media (max-width: 520px) {
-  .app-content-finder .sidebar {
+  .app-content-finder .sidebar,
+  .app-content-trash .sidebar {
     display: none;
   }
 
-  .app-content-finder .toolbar {
+  .app-content-finder .toolbar,
+  .app-content-trash .toolbar {
     gap: 4px;
     padding: 6px;
   }
 
-  .app-content-finder .tool-btn {
+  .app-content-finder .tool-btn,
+  .app-content-trash .tool-btn {
     padding: 6px;
     font-size: 11px;
   }
 
-  .app-content-finder .search-field {
+  .app-content-finder .search-field,
+  .app-content-trash .search-field {
     padding: 6px 8px;
   }
 
   .app-content-finder .list-header,
-  .app-content-finder .list-row {
+  .app-content-finder .list-row,
+  .app-content-trash .list-header,
+  .app-content-trash .list-row {
     grid-template-columns: 32px minmax(100px, 1fr) 58px;
     padding-right: 7px;
     padding-left: 7px;
   }
 
   .app-content-finder .list-header > :nth-child(3),
-  .app-content-finder .list-row > :nth-child(3) {
+  .app-content-finder .list-row > :nth-child(3),
+  .app-content-trash .list-header > :nth-child(3),
+  .app-content-trash .list-row > :nth-child(3) {
     display: none;
   }
 
   .app-content-projects .product--container-c {
     grid-template-columns: 1fr;
   }
+}
+
+.app-content-projects .app--store,
+.app-content-finder .sidebar,
+.app-content-finder .file-grid,
+.app-content-trash .sidebar,
+.app-content-trash .file-grid {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-content-projects .app--store::-webkit-scrollbar,
+.app-content-finder .sidebar::-webkit-scrollbar,
+.app-content-finder .file-grid::-webkit-scrollbar,
+.app-content-trash .sidebar::-webkit-scrollbar,
+.app-content-trash .file-grid::-webkit-scrollbar {
+  display: none;
 }

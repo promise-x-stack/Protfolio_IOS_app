@@ -3,6 +3,7 @@
   margin: 0px;
   border-radius: 0px;
   box-sizing: border-box;
+  scrollbar-width: none;
 }
 :root {
   --text: #3e3449;
